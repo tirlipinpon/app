@@ -1,0 +1,35 @@
+# Ignorer les repos Git des sous-projets pour ne pas altérer leurs branches
+cathegories/.git/
+heures/.git/
+math/.git/
+mots/.git/
+tests/.git/
+
+# Node modules
+node_modules/
+tests/node_modules/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Fichiers temporaires
+*.tmp
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Fichiers de configuration locale
+.env
+.env.local
+config.local.js
+
+# Cache
+.cache/
+*.cache
+
