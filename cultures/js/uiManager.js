@@ -1,0 +1,489 @@
+// ============================================
+// UI MANAGER - Gestion de l'interface utilisateur
+// ============================================
+
+class UIManager {
+  constructor() {
+    // Pas besoin de stocker les domElements, on les récupère directement quand nécessaire
+  }
+  
+  // ==========================================
+  // UTILITAIRES
+  // ==========================================
+  
+  setCurrentUser(username) {
+    const currentUserDisplay = document.getElementById('currentUser');
+    if (currentUserDisplay) {
+      currentUserDisplay.textContent = username;
+    }
+  }
+  
+  // ==========================================
+  // AFFICHAGE DES QUESTIONS
+  // ==========================================
+  
+  displayQuestion(questionText) {
+    const questionTextElement = document.getElementById('questionText');
+    if (questionTextElement) {
+      questionTextElement.textContent = questionText;
+    }
+  }
+  
+  // ==========================================
+  // CRÉATION DES INTERFACES DE RÉPONSE
+  // ==========================================
+  
+  createAnswerInterface(questionType, questionData) {
+    const answerContainer = document.getElementById('answerContainer');
+    const hintContainer = document.getElementById('hintContainer');
+    
+    if (!answerContainer) return;
+    
+    // Nettoyer le contenu précédent
+    answerContainer.innerHTML = '';
+    if (hintContainer) hintContainer.innerHTML = '';
+    
+    // Créer l'interface selon le type
+    switch (questionType) {
+      case 'input':
+        this.createInputInterface();
+        break;
+      
+      case 'qcm':
+        this.createQCMInterface(questionData);
+        break;
+      
+      case 'vrai-faux':
+        this.createVraiFauxInterface();
+        break;
+      
+      case 'ordre':
+        this.createOrdreInterface(questionData);
+        break;
+      
+      case 'association':
+        this.createAssociationInterface(questionData);
+        break;
+      
+      case 'glisser-deposer':
+        this.createGlisserDeposerInterface(questionData);
+        break;
+      
+      case 'remplir-blancs':
+        this.createRemplirBlancsInterface(questionData);
+        break;
+    }
+    
+    // Ajouter le bouton hint
+    this.createHintButton();
+  }
+  
+  // ==========================================
+  // INTERFACE: INPUT
+  // ==========================================
+  
+  createInputInterface() {
+    const html = `
+      <div class="input-container">
+        <input 
+          type="text" 
+          id="answerInput" 
+          class="answer-input" 
+          placeholder="Tape ta réponse ici..."
+          autocomplete="off"
+        />
+        <button id="submitBtn" class="submit-btn">
+          ✓ Valider
+        </button>
+      </div>
+    `;
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  // ==========================================
+  // INTERFACE: QCM
+  // ==========================================
+  
+  createQCMInterface(questionData) {
+    const options = questionData.options || [];
+    const answerContainer = document.getElementById('answerContainer');
+    
+    const html = `
+      <div class="qcm-container">
+        ${options.map(option => `
+          <button class="option-btn" data-answer="${this.escapeHtml(option)}">
+            ${this.escapeHtml(option)}
+          </button>
+        `).join('')}
+      </div>
+    `;
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  // ==========================================
+  // INTERFACE: VRAI-FAUX
+  // ==========================================
+  
+  createVraiFauxInterface() {
+    const html = `
+      <div class="vrai-faux-container">
+        <button id="trueFalseTrue" class="true-false-btn true-btn">
+          ✓ Vrai
+        </button>
+        <button id="trueFalseFalse" class="true-false-btn false-btn">
+          ✗ Faux
+        </button>
+      </div>
+    `;
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  // ==========================================
+  // INTERFACE: ORDRE
+  // ==========================================
+  
+  createOrdreInterface(questionData) {
+    const items = questionData.shuffledItems || [];
+    const answerContainer = document.getElementById('answerContainer');
+    
+    const html = `
+      <div class="ordre-instructions">
+        Glisse les éléments pour les mettre dans le bon ordre
+      </div>
+      <div id="ordreContainer" class="ordre-container">
+        ${items.map(item => `
+          <div class="ordre-item" data-original-index="${item.originalIndex}" draggable="true">
+            <span class="drag-handle">⋮⋮</span>
+            <span class="ordre-text">${this.escapeHtml(item.text)}</span>
+          </div>
+        `).join('')}
+      </div>
+      <button id="submitOrdre" class="submit-btn">✓ Valider l'ordre</button>
+    `;
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  // ==========================================
+  // INTERFACE: ASSOCIATION
+  // ==========================================
+  
+  createAssociationInterface(questionData) {
+    const options = questionData.options || { left: [], right: [] };
+    const answerContainer = document.getElementById('answerContainer');
+    
+    const html = `
+      <div class="association-instructions">
+        Clique sur un élément de gauche, puis sur son correspondant à droite
+      </div>
+      <div class="association-container">
+        <div class="association-column association-left">
+          ${options.left.map(item => `
+            <div class="association-item" data-value="${this.escapeHtml(item)}">
+              ${this.escapeHtml(item)}
+            </div>
+          `).join('')}
+        </div>
+        
+        <svg class="association-lines" id="associationSVG"></svg>
+        
+        <div class="association-column association-right">
+          ${options.right.map(item => `
+            <div class="association-item" data-value="${this.escapeHtml(item)}">
+              ${this.escapeHtml(item)}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <button id="submitAssociation" class="submit-btn">✓ Valider les associations</button>
+    `;
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  drawAssociationLine(leftValue, rightValue) {
+    const svg = document.getElementById('associationSVG');
+    if (!svg) return;
+    
+    const leftItem = document.querySelector(`.association-left .association-item[data-value="${leftValue}"]`);
+    const rightItem = document.querySelector(`.association-right .association-item[data-value="${rightValue}"]`);
+    
+    if (!leftItem || !rightItem) return;
+    
+    const svgRect = svg.getBoundingClientRect();
+    const leftRect = leftItem.getBoundingClientRect();
+    const rightRect = rightItem.getBoundingClientRect();
+    
+    const x1 = leftRect.right - svgRect.left;
+    const y1 = leftRect.top + leftRect.height / 2 - svgRect.top;
+    const x2 = rightRect.left - svgRect.left;
+    const y2 = rightRect.top + rightRect.height / 2 - svgRect.top;
+    
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+    line.setAttribute('class', 'association-line');
+    line.setAttribute('data-left', leftValue);
+    line.setAttribute('data-right', rightValue);
+    
+    svg.appendChild(line);
+    
+    // Marquer les items comme connectés
+    leftItem.classList.add('connected');
+    rightItem.classList.add('connected');
+  }
+  
+  // ==========================================
+  // INTERFACE: GLISSER-DÉPOSER
+  // ==========================================
+  
+  createGlisserDeposerInterface(questionData) {
+    const options = questionData.options || { categories: [], items: [] };
+    const answerContainer = document.getElementById('answerContainer');
+    
+    const html = `
+      <div class="glisser-instructions">
+        Glisse chaque élément dans la bonne catégorie
+      </div>
+      <div class="glisser-container">
+        <div class="items-pool drop-zone" data-category="pool">
+          <h4>Éléments à classer :</h4>
+          ${options.items.map(item => `
+            <div class="draggable-item" data-value="${this.escapeHtml(item)}" draggable="true">
+              ${this.escapeHtml(item)}
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="categories-zones">
+          ${options.categories.map(category => `
+            <div class="category-zone">
+              <h4>${this.escapeHtml(category)}</h4>
+              <div class="drop-zone" data-category="${this.escapeHtml(category)}">
+                <!-- Les éléments seront déposés ici -->
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <button id="submitGlisser" class="submit-btn">✓ Valider</button>
+    `;
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  // ==========================================
+  // INTERFACE: REMPLIR-BLANCS
+  // ==========================================
+  
+  createRemplirBlancsInterface(questionData) {
+    const questionText = questionData.question || '';
+    const parts = questionText.split('___');
+    const answerContainer = document.getElementById('answerContainer');
+    
+    let html = '<div class="blanks-container">';
+    
+    parts.forEach((part, index) => {
+      html += `<span class="blanks-text">${this.escapeHtml(part)}</span>`;
+      if (index < parts.length - 1) {
+        html += `<input type="text" class="blanks-input" placeholder="..." autocomplete="off" />`;
+      }
+    });
+    
+    html += '</div>';
+    html += '<button id="submitBlanks" class="submit-btn">✓ Valider</button>';
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  // ==========================================
+  // HINT BUTTON
+  // ==========================================
+  
+  createHintButton() {
+    const hintContainer = document.getElementById('hintContainer');
+    if (!hintContainer) return;
+    
+    const html = `
+      <button id="hintBtn" class="hint-btn">
+        💡 Besoin d'aide ?
+      </button>
+      <div id="hintsContainer" class="hints-container"></div>
+    `;
+    
+    hintContainer.innerHTML = html;
+  }
+  
+  displayHint(hintText, hintNumber = 1, maxHints = 1) {
+    const hintsContainer = document.getElementById('hintsContainer');
+    
+    if (hintsContainer) {
+      // Créer un nouveau div pour ce hint
+      const hintDiv = document.createElement('div');
+      hintDiv.className = 'hint-display';
+      hintDiv.innerHTML = `
+        <div class="hint-number">Indice ${hintNumber}/${maxHints}</div>
+        <div class="hint-text">${hintText}</div>
+      `;
+      
+      // Ajouter avec animation
+      hintsContainer.appendChild(hintDiv);
+      
+      // Animer l'apparition
+      setTimeout(() => {
+        hintDiv.classList.add('visible');
+      }, 10);
+    }
+  }
+  
+  showHintLoader() {
+    const hintsContainer = document.getElementById('hintsContainer');
+    if (hintsContainer) {
+      // Vérifier s'il y a déjà un loader
+      const existingLoader = hintsContainer.querySelector('.hint-loader-wrapper');
+      if (existingLoader) {
+        existingLoader.remove();
+      }
+      
+      const loaderDiv = document.createElement('div');
+      loaderDiv.className = 'hint-loader-wrapper';
+      loaderDiv.innerHTML = `
+        <div class="hint-loader">
+          <div class="loader-emoji">🤔💭</div>
+          <div class="loader-text">L'assistant réfléchit...</div>
+        </div>
+      `;
+      
+      hintsContainer.appendChild(loaderDiv);
+      
+      // Retirer le loader après affichage du hint (sera fait automatiquement)
+      setTimeout(() => {
+        const loader = hintsContainer.querySelector('.hint-loader-wrapper');
+        if (loader) loader.remove();
+      }, 5000);
+    }
+  }
+  
+  // ==========================================
+  // FEEDBACK
+  // ==========================================
+  
+  showFeedback(message, type = 'info') {
+    const feedback = document.getElementById('feedback');
+    if (!feedback) return;
+    
+    feedback.textContent = message;
+    feedback.className = `feedback feedback-${type}`;
+    feedback.classList.remove('hidden');
+  }
+  
+  hideFeedback() {
+    const feedback = document.getElementById('feedback');
+    if (feedback) {
+      feedback.classList.add('hidden');
+    }
+  }
+  
+  // ==========================================
+  // ANIMATIONS
+  // ==========================================
+  
+  createCelebration() {
+    const celebration = document.createElement('div');
+    celebration.className = 'celebration';
+    celebration.innerHTML = `
+      <div class="celebration-content">
+        <div class="celebration-emoji">🎉🏆🎊</div>
+        <h2>FÉLICITATIONS !</h2>
+        <p>Tu as terminé toutes les questions !</p>
+        <p class="celebration-subtitle">Tu es un champion de culture ! 👑</p>
+      </div>
+    `;
+    
+    document.body.appendChild(celebration);
+    
+    // Créer des confettis
+    this.createConfetti();
+    
+    // Retirer après 5 secondes
+    setTimeout(() => {
+      celebration.remove();
+    }, 5000);
+  }
+  
+  createCategoryCompletionCelebration(icon, categoryName, encouragement) {
+    const celebration = document.createElement('div');
+    celebration.className = 'celebration category-celebration';
+    celebration.innerHTML = `
+      <div class="celebration-content">
+        <div class="celebration-emoji">${icon} ✨</div>
+        <h2>BRAVO !</h2>
+        <p>Catégorie <strong>${categoryName}</strong> terminée !</p>
+        <p class="celebration-subtitle">${encouragement}</p>
+      </div>
+    `;
+    
+    document.body.appendChild(celebration);
+    
+    this.createConfetti();
+    
+    setTimeout(() => {
+      celebration.remove();
+    }, 4000);
+  }
+  
+  createConfetti() {
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    const confettiCount = 50;
+    
+    for (let i = 0; i < confettiCount; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = Math.random() * 3 + 's';
+      confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+      
+      document.body.appendChild(confetti);
+      
+      setTimeout(() => confetti.remove(), 5000);
+    }
+  }
+  
+  // ==========================================
+  // UTILITAIRES
+  // ==========================================
+  
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  
+  showLoader(message = 'Chargement...') {
+    const loader = document.createElement('div');
+    loader.id = 'globalLoader';
+    loader.className = 'global-loader';
+    loader.innerHTML = `
+      <div class="loader-content">
+        <div class="spinner"></div>
+        <p>${message}</p>
+      </div>
+    `;
+    
+    document.body.appendChild(loader);
+  }
+  
+  hideLoader() {
+    const loader = document.getElementById('globalLoader');
+    if (loader) {
+      loader.remove();
+    }
+  }
+}
+

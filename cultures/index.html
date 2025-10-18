@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Cultures - Jeu de Culture Générale</title>
+  <script>
+    // Cache busting - Générer un timestamp unique pour forcer le rechargement
+    const CACHE_BUST = Date.now();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    // Appliquer le cache bust au CSS aussi
+    document.querySelector('link[rel="stylesheet"]').href += `?v=${CACHE_BUST}`;
+  </script>
+</head>
+<body>
+  <!-- Badge de version -->
+  <div class="version-badge" id="versionBadge">v0.0.0</div>
+  
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <a href="../index.html" class="home-button" title="Retour au menu principal">🏠 Menu</a>
+      
+      <h1 class="title">
+        <span class="title-icon">🎭</span>
+        Cultures
+        <span class="title-subtitle">Jeu de Culture Générale</span>
+      </h1>
+      
+      <div class="header-actions">
+        <button id="soundBtn" class="icon-btn" title="Sons">🔊</button>
+        <button id="logoutBtn" class="btn btn-secondary hidden">Déconnexion</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Section de jeu (toujours visible) -->
+  <section id="gameSection" class="section section-game">
+    <div class="container">
+      
+      <!-- Connexion (en haut du jeu) -->
+      <div class="login-inline">
+        <div class="login-form-inline">
+          <select id="usernameSelect" class="input-select hidden">
+            <option value="">-- Utilisateurs existants --</option>
+          </select>
+          <input 
+            type="text" 
+            id="usernameInput" 
+            class="input-text" 
+            placeholder="Ton nom (optionnel)..."
+            autocomplete="off"
+          />
+          <button id="loginBtn" class="btn btn-secondary">
+            Se connecter
+          </button>
+          <div class="user-info hidden" id="userInfo">
+            <span>👤 <strong id="currentUser"></strong></span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sélecteur de catégorie -->
+      <div class="category-selector">
+        <label for="categorySelect">🗂️ Catégorie :</label>
+        <select id="categorySelect" class="input-select">
+          <option value="toutes">📦 Toutes</option>
+          <option value="culture">🎭 Culture générale</option>
+          <option value="science">🔬 Science</option>
+          <option value="histoire">📜 Histoire</option>
+        </select>
+      </div>
+      
+      <!-- Carte de question -->
+      <div class="question-card">
+        <div class="question-header">
+          <h2 id="questionText" class="question-text">
+            Chargement de la question...
+          </h2>
+        </div>
+        
+        <!-- Conteneur de réponse (dynamique selon le type) -->
+        <div id="answerContainer" class="answer-container">
+          <!-- Le contenu sera injecté dynamiquement -->
+        </div>
+        
+        <!-- Feedback -->
+        <div id="feedback" class="feedback hidden">
+          Réponse en attente...
+        </div>
+        
+        <!-- Hint -->
+        <div id="hintContainer" class="hint-container">
+          <!-- Le bouton hint sera injecté ici -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>🎮 Cultures v1.0.2 | Propulsé par Supabase & DeepSeek AI</p>
+  </footer>
+
+  <!-- Scripts -->
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Chargement dynamique des scripts avec cache busting -->
+  <script>
+    // Liste des scripts à charger dans l'ordre
+    const scripts = [
+      'js/config.js',
+      'js/sessionManager.js',
+      'js/userManager.js',
+      'js/categories.js',
+      'js/data.js',
+      'js/supabaseService.js',
+      'js/questionManager.js',
+      'js/incorrectTracker.js',
+      'js/aiHintService.js',
+      'js/inputHandler.js',
+      'js/uiManager.js',
+      'js/soundManager.js',
+      'js/game.js'
+    ];
+    
+    // Charger les scripts avec le cache bust
+    scripts.forEach(src => {
+      const script = document.createElement('script');
+      script.src = `${src}?v=${CACHE_BUST}`;
+      document.write(script.outerHTML);
+    });
+  </script>
+</body>
+</html>
+
