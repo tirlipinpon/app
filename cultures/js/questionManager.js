@@ -279,7 +279,8 @@ class QuestionManager {
         return this.validateInput(userAnswer, correctAnswer, validateFlexible);
       
       case 'qcm':
-        return userAnswer === correctAnswer;
+        // Ignorer majuscules/minuscules pour simplifier les réponses
+        return this.normalizeString(userAnswer) === this.normalizeString(correctAnswer);
       
       case 'vrai-faux':
         return userAnswer === correctAnswer;
@@ -301,20 +302,27 @@ class QuestionManager {
     }
   }
   
+  // Normaliser les chaînes (minuscules, trim, accents conservés)
+  normalizeString(str) {
+    if (typeof str !== 'string') return String(str);
+    return str.trim().toLowerCase();
+  }
+  
   // Validation input flexible
   validateInput(userAnswer, correctAnswers, flexible = true) {
     if (!userAnswer || userAnswer.trim() === '') return false;
     
     if (!flexible) {
-      return userAnswer.trim() === correctAnswers.toString().trim();
+      // Même en mode non flexible, ignorer la casse
+      return this.normalizeString(userAnswer) === this.normalizeString(correctAnswers);
     }
     
     // Accepter plusieurs variantes
     const answerArray = Array.isArray(correctAnswers) ? correctAnswers : [correctAnswers];
-    const userClean = userAnswer.trim().toLowerCase();
+    const userClean = this.normalizeString(userAnswer);
     
     return answerArray.some(ans => 
-      ans.toString().trim().toLowerCase() === userClean
+      this.normalizeString(ans) === userClean
     );
   }
   

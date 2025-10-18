@@ -320,6 +320,9 @@ class UIManager {
   }
   
   displayHint(hintText, hintNumber = 1, maxHints = 1) {
+    // Cacher le loader du bouton
+    this.hideHintLoader();
+    
     const hintsContainer = document.getElementById('hintsContainer');
     
     if (hintsContainer) {
@@ -342,30 +345,34 @@ class UIManager {
   }
   
   showHintLoader() {
-    const hintsContainer = document.getElementById('hintsContainer');
-    if (hintsContainer) {
-      // Vérifier s'il y a déjà un loader
-      const existingLoader = hintsContainer.querySelector('.hint-loader-wrapper');
-      if (existingLoader) {
-        existingLoader.remove();
-      }
+    const hintBtn = document.getElementById('hintBtn');
+    if (hintBtn) {
+      // Désactiver le bouton
+      hintBtn.disabled = true;
       
-      const loaderDiv = document.createElement('div');
-      loaderDiv.className = 'hint-loader-wrapper';
-      loaderDiv.innerHTML = `
-        <div class="hint-loader">
-          <div class="loader-emoji">🤔💭</div>
-          <div class="loader-text">L'assistant réfléchit...</div>
-        </div>
+      // Sauvegarder le texte original
+      const originalText = hintBtn.innerHTML;
+      hintBtn.setAttribute('data-original-text', originalText);
+      
+      // Afficher le spinner
+      hintBtn.innerHTML = `
+        <span class="hint-btn-loader"></span>
+        Réflexion...
       `;
-      
-      hintsContainer.appendChild(loaderDiv);
-      
-      // Retirer le loader après affichage du hint (sera fait automatiquement)
-      setTimeout(() => {
-        const loader = hintsContainer.querySelector('.hint-loader-wrapper');
-        if (loader) loader.remove();
-      }, 5000);
+      hintBtn.classList.add('loading');
+    }
+  }
+  
+  hideHintLoader() {
+    const hintBtn = document.getElementById('hintBtn');
+    if (hintBtn && hintBtn.classList.contains('loading')) {
+      // Restaurer le texte original
+      const originalText = hintBtn.getAttribute('data-original-text');
+      if (originalText) {
+        hintBtn.innerHTML = originalText;
+      }
+      hintBtn.classList.remove('loading');
+      hintBtn.disabled = false;
     }
   }
   
@@ -389,56 +396,6 @@ class UIManager {
     }
   }
   
-  // ==========================================
-  // BOUTONS DE CHOIX (Réessayer / Passer)
-  // ==========================================
-  
-  showRetryChoice(onRetry, onSkip) {
-    const feedback = document.getElementById('feedback');
-    if (!feedback) return;
-    
-    // Créer les boutons s'ils n'existent pas
-    let retryChoiceDiv = document.getElementById('retryChoice');
-    if (!retryChoiceDiv) {
-      retryChoiceDiv = document.createElement('div');
-      retryChoiceDiv.id = 'retryChoice';
-      retryChoiceDiv.className = 'retry-choice';
-      
-      retryChoiceDiv.innerHTML = `
-        <button id="retryBtn" class="retry-btn btn-retry">
-          🔄 Réessayer
-        </button>
-        <button id="skipBtn" class="skip-btn btn-skip">
-          ⏭️ Question suivante
-        </button>
-      `;
-      
-      // Insérer après le feedback
-      feedback.parentNode.insertBefore(retryChoiceDiv, feedback.nextSibling);
-    }
-    
-    // Afficher les boutons
-    retryChoiceDiv.classList.remove('hidden');
-    
-    // Attacher les événements
-    const retryBtn = document.getElementById('retryBtn');
-    const skipBtn = document.getElementById('skipBtn');
-    
-    if (retryBtn) {
-      retryBtn.onclick = onRetry;
-    }
-    
-    if (skipBtn) {
-      skipBtn.onclick = onSkip;
-    }
-  }
-  
-  hideRetryChoice() {
-    const retryChoiceDiv = document.getElementById('retryChoice');
-    if (retryChoiceDiv) {
-      retryChoiceDiv.classList.add('hidden');
-    }
-  }
   
   // ==========================================
   // ANIMATIONS

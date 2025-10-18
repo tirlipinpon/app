@@ -27,6 +27,10 @@ class CultureGame {
     this.currentCategory = 'toutes';
     this.isLoading = false;
     
+    // Compteur d'essais pour la question actuelle
+    this.attemptCount = 0;
+    this.maxAttempts = 3; // 3 tentatives maximum
+    
     // Initialiser le jeu
     this.initialize();
   }
@@ -160,6 +164,9 @@ class CultureGame {
     if (this.isLoading) return;
     this.isLoading = true;
     
+    // Réinitialiser le compteur d'essais
+    this.attemptCount = 0;
+    
     // Nettoyer l'input handler
     this.inputHandler.cleanup();
     
@@ -286,51 +293,72 @@ class CultureGame {
   }
   
   handleIncorrectAnswer() {
-    // Feedback visuel
-    this.ui.showFeedback('❌ Incorrect. Que veux-tu faire ?', 'error');
+    // Incrémenter le compteur d'essais
+    this.attemptCount++;
+    
+    console.log(`❌ Tentative ${this.attemptCount}/${this.maxAttempts}`);
     
     // Son
     this.soundManager.play('incorrect');
     
-    // Afficher les boutons de choix
-    this.ui.showRetryChoice(() => {
-      // Action "Réessayer"
-      this.handleRetry();
-    }, () => {
-      // Action "Question suivante"
-      this.handleSkipToNext();
-    });
+    // Vérifier si le nombre max d'essais est atteint
+    if (this.attemptCount >= this.maxAttempts) {
+      // Max atteint : afficher la bonne réponse et passer
+      this.showCorrectAnswerAndSkip();
+    } else {
+      // Encore des essais disponibles
+      const remaining = this.maxAttempts - this.attemptCount;
+      const message = remaining === 1 
+        ? `❌ Incorrect ! Dernier essai !` 
+        : `❌ Incorrect ! Encore ${remaining} essais.`;
+      
+      this.ui.showFeedback(message, 'error');
+      
+      // Réactiver les inputs pour permettre un nouvel essai
+      const questionData = this.questionManager.getCurrentQuestion();
+      this.inputHandler.reactivateInputs(questionData.type);
+    }
   }
   
-  handleRetry() {
-    console.log('🔄 L\'utilisateur choisit de réessayer');
+  showCorrectAnswerAndSkip() {
+    console.log('📖 Affichage de la bonne réponse après 3 essais');
     
-    // Masquer les boutons de choix
-    this.ui.hideRetryChoice();
-    
-    // Réinitialiser le feedback
-    this.ui.showFeedback('💭 Essaie encore une fois !', 'info');
-    
-    // Réactiver les inputs (selon le type de question)
+    // Récupérer la bonne réponse
     const questionData = this.questionManager.getCurrentQuestion();
-    this.inputHandler.reactivateInputs(questionData.type);
-  }
-  
-  handleSkipToNext() {
-    console.log('⏭️ L\'utilisateur choisit de passer à la question suivante');
+    const correctAnswer = this.formatCorrectAnswer(questionData.answer, questionData.type);
     
-    // Masquer les boutons de choix
-    this.ui.hideRetryChoice();
+    // Afficher la bonne réponse
+    this.ui.showFeedback(`❌ La bonne réponse était : ${correctAnswer}`, 'error');
     
     // Ajouter aux incorrectes (seulement si connecté)
     if (this.userManager.isLoggedIn()) {
       this.incorrectTracker.addIncorrect(this.currentQuestionId);
     }
     
-    // Attendre un peu puis charger la question suivante
+    // Attendre 3 secondes puis charger la question suivante
     setTimeout(() => {
       this.loadQuestion();
-    }, 500);
+    }, 3000);
+  }
+  
+  // Formater la réponse correcte pour l'affichage
+  formatCorrectAnswer(answer, questionType) {
+    if (questionType === 'vrai-faux') {
+      return answer ? '✓ Vrai' : '✗ Faux';
+    }
+    
+    if (typeof answer === 'object' && !Array.isArray(answer)) {
+      // Association
+      const pairs = Object.entries(answer).map(([key, value]) => `${key} → ${value}`);
+      return pairs.join(', ');
+    }
+    
+    if (Array.isArray(answer)) {
+      // Array (peut être pour ordre ou multiple values)
+      return answer.join(', ');
+    }
+    
+    return String(answer);
   }
   
   // ==========================================

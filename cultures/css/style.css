@@ -422,29 +422,48 @@ body {
 
 .qcm-container {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--spacing-sm);
+  justify-content: center;
 }
 
 .option-btn {
+  flex: 1 1 calc(50% - var(--spacing-sm) / 2);
+  min-width: 200px;
   padding: 1rem 1.5rem;
   background: white;
   border: 3px solid var(--border);
   border-radius: var(--radius-lg);
-  font-size: 1.125rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  text-align: left;
+  text-align: center;
 }
 
 .option-btn:hover {
   border-color: var(--primary);
   background: rgba(102, 126, 234, 0.05);
-  transform: translateX(8px);
+  transform: translateY(-4px);
 }
 
 .option-btn:active {
   transform: scale(0.98);
+}
+
+/* Responsive pour mobile : retour en colonne */
+@media (max-width: 640px) {
+  .qcm-container {
+    flex-direction: column;
+  }
+  
+  .option-btn {
+    flex: 1 1 100%;
+    text-align: left;
+  }
+  
+  .option-btn:hover {
+    transform: translateX(8px);
+  }
 }
 
 /* ==========================================
@@ -761,75 +780,6 @@ body {
   color: var(--info);
 }
 
-/* ==========================================
-   BOUTONS DE CHOIX (Réessayer / Passer)
-   ========================================== */
-
-.retry-choice {
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: center;
-  margin: var(--spacing-md) 0;
-  animation: fadeIn 0.3s ease;
-}
-
-.retry-choice.hidden {
-  display: none;
-}
-
-.retry-btn,
-.skip-btn {
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border: none;
-  border-radius: var(--radius-lg);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow);
-}
-
-.retry-btn {
-  background: linear-gradient(135deg, var(--info), #2563eb);
-  color: white;
-}
-
-.retry-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  background: linear-gradient(135deg, #2563eb, var(--info));
-}
-
-.retry-btn:active {
-  transform: translateY(0);
-}
-
-.skip-btn {
-  background: linear-gradient(135deg, var(--text-light), #475569);
-  color: white;
-}
-
-.skip-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  background: linear-gradient(135deg, #475569, var(--text-light));
-}
-
-.skip-btn:active {
-  transform: translateY(0);
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-  .retry-choice {
-    flex-direction: column;
-  }
-  
-  .retry-btn,
-  .skip-btn {
-    width: 100%;
-  }
-}
 
 /* ==========================================
    HINT
@@ -905,28 +855,28 @@ body {
   line-height: 1.5;
 }
 
-.hint-loader-wrapper {
-  background: rgba(102, 126, 234, 0.1);
-  border: 2px dashed var(--primary);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
+/* Petit loader dans le bouton hint */
+.hint-btn.loading {
+  opacity: 0.8;
+  cursor: wait;
 }
 
-.hint-loader {
-  text-align: center;
-  padding: var(--spacing-sm);
+.hint-btn-loader {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
 }
 
-.loader-emoji {
-  font-size: 2rem;
-  animation: bounce 1s ease-in-out infinite;
-}
-
-.loader-text {
-  font-size: 0.875rem;
-  margin-top: var(--spacing-xs);
-  color: var(--primary);
-  font-weight: 500;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ==========================================
