@@ -83,15 +83,39 @@ class UIManager {
   // ==========================================
   
   createInputInterface() {
+    // Récupérer la réponse pour connaître la longueur
+    const questionData = this.getCurrentQuestionData();
+    const answer = questionData?.answer || '';
+    // Normaliser la réponse pour avoir la vraie longueur (œ → oe = 2 lettres)
+    const normalizedAnswer = this.normalizeAnswer(String(answer));
+    const answerLength = normalizedAnswer.length;
+    
+    // Créer les letter boxes
+    let letterBoxesHtml = '';
+    for (let i = 0; i < answerLength; i++) {
+      letterBoxesHtml += '<div class="letter-box" data-index="' + i + '">?</div>';
+    }
+    
     const html = `
-      <div class="input-container">
+      <div class="word-input-container">
+        <!-- Input caché pour mobile -->
         <input 
           type="text" 
-          id="answerInput" 
-          class="answer-input" 
-          placeholder="Tape ta réponse ici..."
+          id="mobileInputAnswer" 
+          class="mobile-input-answer" 
           autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          maxlength="${answerLength}"
+          placeholder="Tape ici..."
         />
+        
+        <!-- Letter boxes -->
+        <div class="word-display-answer" id="wordDisplayAnswer">
+          ${letterBoxesHtml}
+        </div>
+        
         <button id="submitBtn" class="submit-btn">
           ✓ Valider
         </button>
@@ -99,6 +123,31 @@ class UIManager {
     `;
     
     answerContainer.innerHTML = html;
+  }
+  
+  getCurrentQuestionData() {
+    // Cette méthode sera appelée depuis game.js
+    // Pour l'instant, on retourne null, game.js devra la setter
+    return window.currentQuestionDataForUI || null;
+  }
+  
+  normalizeAnswer(str) {
+    // Convertir les ligatures et caractères spéciaux
+    const specialChars = {
+      'œ': 'oe',
+      'Œ': 'OE',
+      'æ': 'ae',
+      'Æ': 'AE',
+      'ß': 'ss'
+    };
+    
+    let result = str;
+    for (const [special, replacement] of Object.entries(specialChars)) {
+      result = result.replace(new RegExp(special, 'g'), replacement);
+    }
+    
+    // Retirer les accents
+    return result.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
   
   // ==========================================

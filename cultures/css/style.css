@@ -361,9 +361,118 @@ body {
 }
 
 /* ==========================================
-   TYPE: INPUT
+   TYPE: INPUT (Letter Boxes)
    ========================================== */
 
+.word-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+/* Input mobile caché */
+.mobile-input-answer {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+
+/* Conteneur des letter boxes */
+.word-display-answer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: var(--spacing-md) 0;
+}
+
+.letter-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: white;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Curseur actif */
+.letter-box.cursor {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(102, 126, 234, 0.1);
+  }
+}
+
+/* Lettre correcte (VERT) */
+.letter-box.letter-correct {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-color: #059669;
+  animation: bounce 0.5s ease;
+}
+
+/* Lettre existe mais mauvaise position (JAUNE) */
+.letter-box.letter-wrong-place {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border-color: #d97706;
+  animation: shake 0.5s ease;
+}
+
+/* Lettre n'existe pas (ROUGE) */
+.letter-box.letter-wrong {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-color: #dc2626;
+  animation: shake 0.5s ease;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* Responsive mobile */
+@media (max-width: 640px) {
+  .letter-box {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Ancien input (pour compatibilité) */
 .input-container {
   display: flex;
   flex-direction: column;

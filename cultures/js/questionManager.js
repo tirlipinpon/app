@@ -81,7 +81,7 @@ class QuestionManager {
     }
     
     // Récupérer la réponse depuis Supabase (champ answer)
-    if (!questionData.answer || !questionData.answer.value) {
+    if (!questionData.answer || questionData.answer.value === undefined || questionData.answer.value === null) {
       console.error(`❌ Pas de réponse trouvée pour: ${questionId}`);
       return null;
     }
@@ -268,7 +268,7 @@ class QuestionManager {
     if (!question) return false;
     
     // Récupérer la réponse depuis Supabase
-    if (!question.answer || !question.answer.value) return false;
+    if (!question.answer || question.answer.value === undefined || question.answer.value === null) return false;
     
     const correctAnswer = question.answer.value;
     const validateFlexible = question.answer.validateFlexible || false;
@@ -302,10 +302,30 @@ class QuestionManager {
     }
   }
   
-  // Normaliser les chaînes (minuscules, trim, accents conservés)
+  // Normaliser les chaînes (minuscules, trim, SANS accents)
   normalizeString(str) {
     if (typeof str !== 'string') return String(str);
-    return str.trim().toLowerCase();
+    return this.removeAccents(str.trim().toLowerCase());
+  }
+  
+  // Retirer les accents ET convertir les caractères spéciaux
+  removeAccents(str) {
+    // Convertir les ligatures et caractères spéciaux
+    const specialChars = {
+      'œ': 'oe',
+      'Œ': 'OE',
+      'æ': 'ae',
+      'Æ': 'AE',
+      'ß': 'ss'
+    };
+    
+    let result = str;
+    for (const [special, replacement] of Object.entries(specialChars)) {
+      result = result.replace(new RegExp(special, 'g'), replacement);
+    }
+    
+    // Retirer les accents
+    return result.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
   
   // Validation input flexible

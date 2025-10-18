@@ -36,9 +36,12 @@ class InputHandler {
   attachListeners(questionType, questionData) {
     this.reset();
     
+    // Stocker les données de la question pour validation
+    this.currentQuestionData = questionData;
+    
     switch (questionType) {
       case 'input':
-        this.setupInputType();
+        this.setupInputType(questionData);
         break;
       
       case 'qcm':
@@ -68,44 +71,203 @@ class InputHandler {
   }
   
   // ==========================================
-  // TYPE: INPUT (Champ texte libre)
+  // TYPE: INPUT (avec letter-boxes)
   // ==========================================
   
-  setupInputType() {
-    const input = document.getElementById('answerInput');
+  setupInputType(questionData) {
+    this.currentInput = '';
+    this.currentQuestionData = questionData;
+    // Normaliser la réponse (retirer les accents)
+    this.correctAnswer = this.removeAccents(String(questionData.answer).toUpperCase());
+    
+    // Setup clavier physique
+    const keydownHandler = (e) => this.handleLetterBoxKeyPress(e);
+    document.addEventListener('keydown', keydownHandler);
+    this.currentInteractions.push({ 
+      element: document, 
+      event: 'keydown', 
+      handler: keydownHandler 
+    });
+    
+    // Setup mobile input
+    this.setupMobileInputAnswer();
+    
+    // Setup bouton submit
     const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+      const handleClick = () => this.submitInputAnswer();
+      submitBtn.addEventListener('click', handleClick);
+      this.currentInteractions.push({ 
+        element: submitBtn, 
+        event: 'click', 
+        handler: handleClick 
+      });
+    }
     
-    if (!input || !submitBtn) return;
+    // Click sur word display pour focus mobile
+    const wordDisplay = document.getElementById('wordDisplayAnswer');
+    if (wordDisplay) {
+      const clickHandler = () => {
+        if (this.isMobileDevice()) {
+          const mobileInput = document.getElementById('mobileInputAnswer');
+          if (mobileInput) mobileInput.focus();
+        }
+      };
+      wordDisplay.addEventListener('click', clickHandler);
+      this.currentInteractions.push({ 
+        element: wordDisplay, 
+        event: 'click', 
+        handler: clickHandler 
+      });
+    }
+  }
+  
+  handleLetterBoxKeyPress(e) {
+    // Ignorer si un input/select est focus (sauf mobileInputAnswer)
+    const activeElement = document.activeElement;
+    if (activeElement && 
+        (activeElement.tagName === 'INPUT' && activeElement.id !== 'mobileInputAnswer') ||
+        activeElement.tagName === 'SELECT') {
+      return;
+    }
     
-    // Soumettre avec Entrée
-    const handleKeyPress = (e) => {
-      if (e.key === 'Enter') {
-        this.submitInputAnswer();
+    const letterBoxes = document.querySelectorAll('#wordDisplayAnswer .letter-box');
+    if (!letterBoxes.length) return;
+    
+    // Backspace
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      if (this.currentInput.length > 0) {
+        // Ne pas supprimer les lettres vertes verrouillées
+        const lastIndex = this.currentInput.length - 1;
+        if (!letterBoxes[lastIndex].classList.contains('letter-correct')) {
+          this.currentInput = this.currentInput.slice(0, -1);
+          this.updateLetterBoxes();
+        }
       }
+      return;
+    }
+    
+    // Lettres ET chiffres (accepter aussi les lettres accentuées)
+    if (e.key.length === 1 && /[a-zA-ZÀ-ÿ0-9]/.test(e.key)) {
+      e.preventDefault();
+      
+      if (this.currentInput.length < this.correctAnswer.length) {
+        // Retirer les accents avant d'ajouter (si c'est une lettre)
+        const normalizedKey = /[0-9]/.test(e.key) 
+          ? e.key 
+          : this.removeAccents(e.key.toUpperCase());
+        this.currentInput += normalizedKey;
+        this.updateLetterBoxes();
+      }
+    }
+  }
+  
+  setupMobileInputAnswer() {
+    const mobileInput = document.getElementById('mobileInputAnswer');
+    if (!mobileInput) return;
+    
+    let previousValue = '';
+    
+    mobileInput.addEventListener('input', (e) => {
+      const value = e.target.value.toUpperCase();
+      
+      if (value.length > previousValue.length) {
+        // Nouvelle lettre/chiffre (accepter les lettres accentuées ET les chiffres)
+        const newChar = value[value.length - 1];
+        if (/[A-ZÀ-ÿ0-9]/.test(newChar) && this.currentInput.length < this.correctAnswer.length) {
+          // Retirer les accents si c'est une lettre
+          const normalizedChar = /[0-9]/.test(newChar) 
+            ? newChar 
+            : this.removeAccents(newChar);
+          this.currentInput += normalizedChar;
+          this.updateLetterBoxes();
+        }
+      } else if (value.length < previousValue.length) {
+        // Backspace
+        if (this.currentInput.length > 0) {
+          const letterBoxes = document.querySelectorAll('#wordDisplayAnswer .letter-box');
+          const lastIndex = this.currentInput.length - 1;
+          if (!letterBoxes[lastIndex].classList.contains('letter-correct')) {
+            this.currentInput = this.currentInput.slice(0, -1);
+            this.updateLetterBoxes();
+          }
+        }
+      }
+      
+      previousValue = value;
+      
+      // Réinitialiser l'input
+      setTimeout(() => {
+        e.target.value = '';
+        previousValue = '';
+      }, 10);
+    });
+  }
+  
+  // Retirer les accents ET convertir les caractères spéciaux
+  removeAccents(str) {
+    // Convertir les ligatures et caractères spéciaux
+    const specialChars = {
+      'œ': 'oe',
+      'Œ': 'OE',
+      'æ': 'ae',
+      'Æ': 'AE',
+      'ß': 'ss'
     };
     
-    // Soumettre avec bouton
-    const handleClick = () => {
-      this.submitInputAnswer();
-    };
+    let result = str;
+    for (const [special, replacement] of Object.entries(specialChars)) {
+      result = result.replace(new RegExp(special, 'g'), replacement);
+    }
     
-    input.addEventListener('keypress', handleKeyPress);
-    submitBtn.addEventListener('click', handleClick);
+    // Retirer les accents
+    return result.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  
+  updateLetterBoxes() {
+    const letterBoxes = document.querySelectorAll('#wordDisplayAnswer .letter-box');
     
-    this.currentInteractions.push(
-      { element: input, event: 'keypress', handler: handleKeyPress },
-      { element: submitBtn, event: 'click', handler: handleClick }
-    );
+    // Mettre à jour l'affichage
+    for (let i = 0; i < letterBoxes.length; i++) {
+      if (i < this.currentInput.length) {
+        const letter = this.currentInput[i];
+        letterBoxes[i].textContent = letter;
+        
+        // Validation en temps réel
+        if (letter === this.correctAnswer[i]) {
+          // ✅ Lettre correcte à la bonne position (VERT)
+          letterBoxes[i].className = 'letter-box letter-correct';
+        } else if (this.correctAnswer.includes(letter)) {
+          // 🟡 Lettre existe mais mauvaise position (JAUNE)
+          letterBoxes[i].className = 'letter-box letter-wrong-place';
+        } else {
+          // ❌ Lettre n'existe pas (ROUGE)
+          letterBoxes[i].className = 'letter-box letter-wrong';
+        }
+      } else {
+        // Case vide
+        letterBoxes[i].textContent = '?';
+        letterBoxes[i].className = 'letter-box';
+      }
+    }
     
-    // Focus automatique
-    input.focus();
+    // Curseur sur la prochaine case (saute les vertes verrouillées)
+    for (let i = 0; i < letterBoxes.length; i++) {
+      letterBoxes[i].classList.remove('cursor');
+    }
+    
+    if (this.currentInput.length < letterBoxes.length) {
+      letterBoxes[this.currentInput.length].classList.add('cursor');
+    }
+  }
+  
+  isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
   
   submitInputAnswer() {
-    const input = document.getElementById('answerInput');
-    if (!input) return;
-    
-    const answer = input.value.trim();
+    const answer = this.currentInput.trim();
     if (answer === '') {
       this.game.ui.showFeedback('Merci d\'entrer une réponse !', 'error');
       return;
@@ -440,9 +602,24 @@ class InputHandler {
     
     switch (questionType) {
       case 'input':
+        // Réinitialiser les letter boxes (ne garder que les vertes)
+        this.currentInput = '';
+        const letterBoxes = document.querySelectorAll('#wordDisplayAnswer .letter-box');
+        letterBoxes.forEach(box => {
+          if (!box.classList.contains('letter-correct')) {
+            box.textContent = '?';
+            box.className = 'letter-box';
+          } else {
+            // Reconstruire currentInput avec les lettres vertes
+            this.currentInput += box.textContent;
+          }
+        });
+        this.updateLetterBoxes();
+        break;
+      
       case 'remplir-blancs':
         // Vider le champ et refocus
-        const input = document.getElementById('answerInput') || document.querySelector('.blanks-input');
+        const input = document.querySelector('.blanks-input');
         if (input) {
           input.value = '';
           input.disabled = false;

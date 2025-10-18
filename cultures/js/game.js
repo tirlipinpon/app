@@ -227,6 +227,9 @@ class CultureGame {
       console.log('🔄 Question reproposée (incorrecte précédemment)');
     }
     
+    // Stocker les données pour l'UI
+    window.currentQuestionDataForUI = questionData;
+    
     // Afficher la question
     this.ui.displayQuestion(questionData.question);
     
