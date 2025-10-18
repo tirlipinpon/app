@@ -5,6 +5,7 @@
 ### 💡 Système de hints amélioré
 
 **Nouveautés** :
+
 - **2 hints pour questions INPUT** : Les questions à réponse libre sont plus difficiles, maintenant 2 indices progressifs
 - **Prompts adaptés enfants** : Langage simple pour 7-12 ans
 - **Hints progressifs** : Hint 1 général, Hint 2 plus précis
@@ -12,6 +13,7 @@
 - **Bouton dynamique** : Affiche "Hint 2/2" ou "Hints utilisés (2/2)"
 
 **Exemples** :
+
 ```
 Question INPUT : "Quelle est la capitale de la France ?"
 
@@ -26,6 +28,7 @@ Hint 2 : 💡 Cette ville est connue pour sa grande tour en métal et elle est s
 ### ⚡ Cache busting & Version
 
 **Nouveautés** :
+
 - Cache busting automatique (F5 suffit)
 - Badge de version visible
 - API DeepSeek configurée

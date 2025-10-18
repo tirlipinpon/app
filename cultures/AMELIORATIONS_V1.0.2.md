@@ -3,12 +3,14 @@
 ## 🎯 Problème résolu
 
 ### Avant (v1.0.1)
+
 - ❌ **1 seul hint** pour toutes les questions
 - ❌ **Prompts génériques** : Pas adaptés aux enfants
 - ❌ **Questions difficiles** : Les enfants restaient bloqués
 - ❌ **Langage adulte** : Vocabulaire trop complexe
 
 ### Maintenant (v1.0.2)
+
 - ✅ **2 hints pour questions INPUT** (les plus difficiles)
 - ✅ **Prompts adaptés 7-12 ans** : Vocabulaire simple
 - ✅ **Progression pédagogique** : Général → Précis
@@ -21,6 +23,7 @@
 ### Pour les questions INPUT (réponse libre)
 
 #### Étape 1 : Hint général
+
 ```
 Question : "Quelle est la capitale de la France ?"
 
@@ -36,6 +39,7 @@ Réponse IA :
 **L'enfant réfléchit...**
 
 #### Étape 2 : Hint précis (si toujours bloqué)
+
 ```
 Prompt envoyé à DeepSeek :
 "C'est le DEUXIÈME indice, sois plus PRÉCIS
@@ -93,15 +97,15 @@ Réponse IA :
 
 ## 📊 Tableau récapitulatif
 
-| Type de question | Nombre de hints | Pourquoi |
-|------------------|-----------------|----------|
-| **Input** | **2 hints** 🔥 | Difficile : l'enfant doit deviner sans choix |
-| QCM | 1 hint | Facile : options visibles |
-| Vrai-Faux | 1 hint | Très facile : 2 choix |
-| Ordre | 1 hint | Moyen : éléments visibles |
-| Association | 1 hint | Moyen : paires visibles |
-| Glisser-Déposer | 1 hint | Moyen : catégories visibles |
-| Remplir-blancs | 1 hint | Moyen : contexte dans la phrase |
+| Type de question | Nombre de hints | Pourquoi                                     |
+| ---------------- | --------------- | -------------------------------------------- |
+| **Input**        | **2 hints** 🔥  | Difficile : l'enfant doit deviner sans choix |
+| QCM              | 1 hint          | Facile : options visibles                    |
+| Vrai-Faux        | 1 hint          | Très facile : 2 choix                        |
+| Ordre            | 1 hint          | Moyen : éléments visibles                    |
+| Association      | 1 hint          | Moyen : paires visibles                      |
+| Glisser-Déposer  | 1 hint          | Moyen : catégories visibles                  |
+| Remplir-blancs   | 1 hint          | Moyen : contexte dans la phrase              |
 
 ---
 
@@ -112,14 +116,16 @@ Réponse IA :
 **Question** : "Qui a peint la Joconde ?"
 
 **Hint 1** (général) :
+
 ```
-💡 C'est un artiste très célèbre de la Renaissance, 
+💡 C'est un artiste très célèbre de la Renaissance,
    il peignait et inventait des machines !
 ```
 
 **Hint 2** (précis) :
+
 ```
-💡 Son prénom est Léonard, et son nom c'est comme 
+💡 Son prénom est Léonard, et son nom c'est comme
    la ville de Vinci. Pense à Léonard de...
 ```
 
@@ -130,14 +136,16 @@ Réponse IA :
 **Question** : "Quelle est la formule chimique de l'eau ?"
 
 **Hint 1** (général) :
+
 ```
-💡 C'est une formule avec H et O, pense à ce que 
+💡 C'est une formule avec H et O, pense à ce que
    tu bois tous les jours !
 ```
 
 **Hint 2** (précis) :
+
 ```
-💡 H2O : 2 lettres H (hydrogène) et 1 lettre O 
+💡 H2O : 2 lettres H (hydrogène) et 1 lettre O
    (oxygène). Le 2 est en petit !
 ```
 
@@ -148,14 +156,16 @@ Réponse IA :
 **Question** : "En quelle année a eu lieu la Révolution française ?"
 
 **Hint 1** (général) :
+
 ```
-💡 C'est à la fin du 18ème siècle, les gens 
+💡 C'est à la fin du 18ème siècle, les gens
    voulaient plus de liberté
 ```
 
 **Hint 2** (précis) :
+
 ```
-💡 C'est en 1789, l'année de la prise de la 
+💡 C'est en 1789, l'année de la prise de la
    Bastille. Pense à 17 et 89 !
 ```
 
@@ -164,7 +174,7 @@ Réponse IA :
 ## 🤖 Prompt complet envoyé à l'IA
 
 ```
-Tu es un assistant pédagogique TRÈS bienveillant pour des ENFANTS (7-12 ans) 
+Tu es un assistant pédagogique TRÈS bienveillant pour des ENFANTS (7-12 ans)
 qui jouent à un jeu de culture.
 
 CONTEXTE :
@@ -203,11 +213,13 @@ TON INDICE (adapté aux enfants) :
 ## 💾 Sauvegarde optimisée
 
 ### Hint 1
+
 - ✅ Sauvegardé dans **Supabase** (table `cultures_questions`, colonne `hint`)
 - ✅ Réutilisé pour tous les joueurs
 - ✅ Économise les appels API
 
 ### Hint 2
+
 - ✅ Sauvegardé en **cache mémoire** (session)
 - ⚠️ **Pas en DB** (économie de stockage)
 - ✅ Régénéré si besoin lors d'une nouvelle session
@@ -231,16 +243,18 @@ TON INDICE (adapté aux enfants) :
 ✅ **Autonomie** : L'enfant progresse par étapes  
 ✅ **Confiance** : Réussit avec aide progressive  
 ✅ **Apprentissage** : Comprend le raisonnement  
-✅ **Motivation** : Encouragé à chaque étape  
+✅ **Motivation** : Encouragé à chaque étape
 
 ---
 
 ## 🔢 Impact sur l'API
 
 ### Avant (v1.0.1)
+
 - 30 questions × 1 hint = **30 appels API max**
 
 ### Maintenant (v1.0.2)
+
 - Questions INPUT (10) × 2 hints = **20 appels**
 - Autres questions (20) × 1 hint = **20 appels**
 - **Total : 40 appels max**
@@ -252,17 +266,20 @@ TON INDICE (adapté aux enfants) :
 ## 🎮 Test du nouveau système
 
 ### 1. Rechargez la page
+
 ```
 Ctrl + Shift + R
 ```
 
 ### 2. Console devrait afficher
+
 ```
 🎮 Jeu de Cultures - Version 1.0.2 ✅
 🤖 API IA configurée: true ✅
 ```
 
 ### 3. Trouvez une question INPUT
+
 ```
 Exemples :
 - "Quelle est la capitale de la France ?"
@@ -271,6 +288,7 @@ Exemples :
 ```
 
 ### 4. Cliquez "💡 Besoin d'aide ?"
+
 ```
 → Loader : "L'assistant réfléchit..."
 → Hint 1 apparaît
@@ -278,6 +296,7 @@ Exemples :
 ```
 
 ### 5. Cliquez à nouveau
+
 ```
 → Loader
 → Hint 2 apparaît (plus précis)
@@ -285,6 +304,7 @@ Exemples :
 ```
 
 ### 6. Console devrait montrer
+
 ```
 🤖 Génération du hint 1 par IA pour: q_culture_1
 ✅ Hint 1 généré et sauvegardé
@@ -295,6 +315,7 @@ Exemples :
 ```
 
 ### 7. Network (F12 → Network)
+
 ```
 POST https://api.deepseek.com/v1/chat/completions (×2)
 Status: 200 OK
@@ -320,4 +341,3 @@ Status: 200 OK
 ---
 
 **Rechargez et testez ! F5 → Version 1.0.2 ! 🚀**
-
