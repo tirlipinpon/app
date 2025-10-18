@@ -113,6 +113,7 @@ git submodule add <url-du-repo> mots
 ## 🚫 Ce qui est ignoré (`.gitignore`)
 
 Le fichier `.gitignore` à la racine ignore :
+
 - Les dossiers `.git/` des sous-projets
 - `node_modules/`
 - Fichiers temporaires et logs
@@ -147,4 +148,3 @@ cd mots/ && git add . && git commit -m "Update" && cd ..
 ✅ **Flexibilité maximale** → Tu choisis où et quand committer
 
 Bon développement ! 🚀
-
