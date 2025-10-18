@@ -390,6 +390,57 @@ class UIManager {
   }
   
   // ==========================================
+  // BOUTONS DE CHOIX (Réessayer / Passer)
+  // ==========================================
+  
+  showRetryChoice(onRetry, onSkip) {
+    const feedback = document.getElementById('feedback');
+    if (!feedback) return;
+    
+    // Créer les boutons s'ils n'existent pas
+    let retryChoiceDiv = document.getElementById('retryChoice');
+    if (!retryChoiceDiv) {
+      retryChoiceDiv = document.createElement('div');
+      retryChoiceDiv.id = 'retryChoice';
+      retryChoiceDiv.className = 'retry-choice';
+      
+      retryChoiceDiv.innerHTML = `
+        <button id="retryBtn" class="retry-btn btn-retry">
+          🔄 Réessayer
+        </button>
+        <button id="skipBtn" class="skip-btn btn-skip">
+          ⏭️ Question suivante
+        </button>
+      `;
+      
+      // Insérer après le feedback
+      feedback.parentNode.insertBefore(retryChoiceDiv, feedback.nextSibling);
+    }
+    
+    // Afficher les boutons
+    retryChoiceDiv.classList.remove('hidden');
+    
+    // Attacher les événements
+    const retryBtn = document.getElementById('retryBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    
+    if (retryBtn) {
+      retryBtn.onclick = onRetry;
+    }
+    
+    if (skipBtn) {
+      skipBtn.onclick = onSkip;
+    }
+  }
+  
+  hideRetryChoice() {
+    const retryChoiceDiv = document.getElementById('retryChoice');
+    if (retryChoiceDiv) {
+      retryChoiceDiv.classList.add('hidden');
+    }
+  }
+  
+  // ==========================================
   // ANIMATIONS
   // ==========================================
   

@@ -14,9 +14,15 @@ const CONFIG = {
   
   // 💡 AI HINT CONFIGURATION
   AI_HINT_CONFIG: {
-    temperature: 0.7,
-    max_tokens: 100,
+    temperature: 0.8,        // Plus créatif pour de meilleurs indices
+    max_tokens: 150,         // Plus de mots pour des indices détaillés
     top_p: 0.9
+  },
+  
+  // 💡 HINT SYSTEM CONFIGURATION
+  HINT_SYSTEM: {
+    maxHintsInput: 3,        // 3 hints pour les questions à réponse libre
+    maxHintsOther: 2         // 2 hints pour les autres types
   },
   
   // ⏱️ RETRY DELAYS (pour questions incorrectes)

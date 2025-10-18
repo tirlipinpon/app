@@ -432,6 +432,78 @@ class InputHandler {
   }
   
   // ==========================================
+  // RÉACTIVATION DES INPUTS (pour réessayer)
+  // ==========================================
+  
+  reactivateInputs(questionType) {
+    console.log(`🔄 Réactivation des inputs pour type: ${questionType}`);
+    
+    switch (questionType) {
+      case 'input':
+      case 'remplir-blancs':
+        // Vider le champ et refocus
+        const input = document.getElementById('answerInput') || document.querySelector('.blanks-input');
+        if (input) {
+          input.value = '';
+          input.disabled = false;
+          input.focus();
+        }
+        break;
+      
+      case 'qcm':
+        // Réactiver tous les boutons
+        const optionBtns = document.querySelectorAll('.option-btn');
+        optionBtns.forEach(btn => {
+          btn.disabled = false;
+          btn.classList.remove('disabled');
+        });
+        break;
+      
+      case 'vrai-faux':
+        // Réactiver les boutons vrai/faux
+        const trueBtn = document.getElementById('trueFalseTrue');
+        const falseBtn = document.getElementById('trueFalseFalse');
+        if (trueBtn) {
+          trueBtn.disabled = false;
+          trueBtn.classList.remove('disabled');
+        }
+        if (falseBtn) {
+          falseBtn.disabled = false;
+          falseBtn.classList.remove('disabled');
+        }
+        break;
+      
+      case 'ordre':
+        // Les éléments drag&drop sont déjà actifs
+        console.log('✅ Ordre : les éléments restent actifs');
+        break;
+      
+      case 'association':
+        // Réinitialiser les associations
+        this.associationState = {
+          selectedLeft: null,
+          pairs: {}
+        };
+        const svg = document.getElementById('associationSVG');
+        if (svg) svg.innerHTML = '';
+        
+        const associationItems = document.querySelectorAll('.association-item');
+        associationItems.forEach(item => {
+          item.classList.remove('selected', 'connected');
+        });
+        break;
+      
+      case 'glisser-deposer':
+        // Remettre les items dans la pool
+        console.log('✅ Glisser-déposer : réinitialisation nécessaire');
+        break;
+      
+      default:
+        console.warn('⚠️ Type de question non géré pour réactivation:', questionType);
+    }
+  }
+  
+  // ==========================================
   // NETTOYAGE
   // ==========================================
   

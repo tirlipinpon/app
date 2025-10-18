@@ -286,21 +286,51 @@ class CultureGame {
   }
   
   handleIncorrectAnswer() {
+    // Feedback visuel
+    this.ui.showFeedback('❌ Incorrect. Que veux-tu faire ?', 'error');
+    
+    // Son
+    this.soundManager.play('incorrect');
+    
+    // Afficher les boutons de choix
+    this.ui.showRetryChoice(() => {
+      // Action "Réessayer"
+      this.handleRetry();
+    }, () => {
+      // Action "Question suivante"
+      this.handleSkipToNext();
+    });
+  }
+  
+  handleRetry() {
+    console.log('🔄 L\'utilisateur choisit de réessayer');
+    
+    // Masquer les boutons de choix
+    this.ui.hideRetryChoice();
+    
+    // Réinitialiser le feedback
+    this.ui.showFeedback('💭 Essaie encore une fois !', 'info');
+    
+    // Réactiver les inputs (selon le type de question)
+    const questionData = this.questionManager.getCurrentQuestion();
+    this.inputHandler.reactivateInputs(questionData.type);
+  }
+  
+  handleSkipToNext() {
+    console.log('⏭️ L\'utilisateur choisit de passer à la question suivante');
+    
+    // Masquer les boutons de choix
+    this.ui.hideRetryChoice();
+    
     // Ajouter aux incorrectes (seulement si connecté)
     if (this.userManager.isLoggedIn()) {
       this.incorrectTracker.addIncorrect(this.currentQuestionId);
     }
     
-    // Feedback visuel
-    this.ui.showFeedback('❌ Incorrect. Essaie encore !', 'error');
-    
-    // Son
-    this.soundManager.play('incorrect');
-    
-    // Attendre puis charger la question suivante
+    // Attendre un peu puis charger la question suivante
     setTimeout(() => {
       this.loadQuestion();
-    }, 2000);
+    }, 500);
   }
   
   // ==========================================
@@ -497,16 +527,19 @@ class CultureGame {
   updateVisibility() {
     // Mise à jour de l'affichage selon l'état de connexion
     const isLoggedIn = this.userManager.isLoggedIn();
+    const logoutBtn = document.getElementById('logoutBtn');
     
     if (isLoggedIn) {
       document.getElementById('usernameInput').classList.add('hidden');
       document.getElementById('usernameSelect').classList.add('hidden');
       document.getElementById('loginBtn').classList.add('hidden');
       document.getElementById('userInfo').classList.remove('hidden');
+      if (logoutBtn) logoutBtn.classList.remove('hidden');
     } else {
       document.getElementById('usernameInput').classList.remove('hidden');
       document.getElementById('loginBtn').classList.remove('hidden');
       document.getElementById('userInfo').classList.add('hidden');
+      if (logoutBtn) logoutBtn.classList.add('hidden');
       this.populateUserSelect();
     }
   }

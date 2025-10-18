@@ -5,7 +5,6 @@
 class QuestionManager {
   constructor() {
     this.questions = [];
-    this.answersData = ANSWERS_DATA;
     this.currentQuestion = null;
     this.shuffleHistory = new Map(); // Garde en mémoire le shuffle par question
   }
@@ -81,14 +80,13 @@ class QuestionManager {
       return null;
     }
     
-    // Récupérer la réponse depuis ANSWERS_DATA
-    const answerData = this.answersData[questionId];
-    if (!answerData) {
+    // Récupérer la réponse depuis Supabase (champ answer)
+    if (!questionData.answer || !questionData.answer.value) {
       console.error(`❌ Pas de réponse trouvée pour: ${questionId}`);
       return null;
     }
     
-    // Créer l'objet question complet
+    // Créer l'objet question complet avec copie des options (important pour shuffle)
     const question = {
       id: questionId,
       question: questionData.question_text,
@@ -96,12 +94,14 @@ class QuestionManager {
       category: questionData.category_id,
       tags: questionData.tags || [],
       hint: questionData.hint,
-      answer: answerData.answer,
-      validateFlexible: answerData.validateFlexible || false,
-      originalOptions: questionData.options
+      answer: questionData.answer.value,
+      validateFlexible: questionData.answer.validateFlexible || false,
+      // Copier les options pour permettre un nouveau shuffle à chaque fois
+      originalOptions: questionData.options ? JSON.parse(JSON.stringify(questionData.options)) : null
     };
     
-    // SHUFFLE selon le type
+    // SHUFFLE selon le type (SE FAIT À CHAQUE AFFICHAGE !)
+    console.log(`🔀 Shuffle des options pour: ${questionId}`);
     this.applyShuffleByType(question);
     
     this.currentQuestion = question;
@@ -140,6 +140,9 @@ class QuestionManager {
     const options = question.originalOptions ? [...question.originalOptions] : [];
     const correctAnswer = question.answer;
     
+    // Log l'ordre original
+    console.log(`📋 Options originales: ${options.join(', ')}`);
+    
     // Créer tableau avec mapping original
     const optionsWithIndex = options.map((opt, idx) => ({
       text: opt,
@@ -147,7 +150,7 @@ class QuestionManager {
       isCorrect: opt === correctAnswer
     }));
     
-    // Shuffle (Fisher-Yates)
+    // Shuffle (Fisher-Yates) - NOUVEAU MÉLANGE À CHAQUE FOIS
     this.shuffleArray(optionsWithIndex);
     
     // Garder le mapping pour validation
@@ -157,7 +160,11 @@ class QuestionManager {
     // Pour l'affichage
     question.options = question.shuffledOptions;
     
-    console.log(`🔀 QCM shuffled: ${question.shuffledOptions.join(', ')}`);
+    console.log(`🔀 QCM shuffled (NOUVEAU): ${question.shuffledOptions.join(', ')}`);
+    
+    // Trouver la position de la bonne réponse après shuffle
+    const correctIndex = question.shuffledOptions.indexOf(correctAnswer);
+    console.log(`✅ Position de la bonne réponse: ${correctIndex + 1}/${question.shuffledOptions.length}`);
   }
   
   // ==========================================
@@ -166,13 +173,15 @@ class QuestionManager {
   shuffleOrdre(question) {
     const items = question.originalOptions ? [...question.originalOptions] : [];
     
+    console.log(`📋 Ordre original: ${items.join(' → ')}`);
+    
     // Créer mapping avec indices originaux
     const itemsWithIndex = items.map((item, idx) => ({
       text: item,
       originalIndex: idx
     }));
     
-    // Shuffle
+    // Shuffle (NOUVEAU MÉLANGE À CHAQUE FOIS)
     this.shuffleArray(itemsWithIndex);
     
     // Pour l'affichage : ordre mélangé
@@ -182,7 +191,7 @@ class QuestionManager {
     // La réponse correcte reste : [0, 1, 2, ...] (ordre correct)
     // L'utilisateur doit recréer cet ordre
     
-    console.log(`🔀 Ordre shuffled: ${question.options.join(' → ')}`);
+    console.log(`🔀 Ordre shuffled (NOUVEAU): ${question.options.join(' → ')}`);
   }
   
   // ==========================================
@@ -197,7 +206,10 @@ class QuestionManager {
     const leftItems = [...(question.originalOptions.left || [])];
     const rightItems = [...(question.originalOptions.right || [])];
     
-    // Shuffle les deux colonnes indépendamment
+    console.log(`📋 Association originale - Left: ${leftItems.join(', ')}`);
+    console.log(`📋 Association originale - Right: ${rightItems.join(', ')}`);
+    
+    // Shuffle les deux colonnes indépendamment (NOUVEAU MÉLANGE À CHAQUE FOIS)
     this.shuffleArray(leftItems);
     this.shuffleArray(rightItems);
     
@@ -206,7 +218,7 @@ class QuestionManager {
       right: rightItems
     };
     
-    console.log(`🔀 Association shuffled:`);
+    console.log(`🔀 Association shuffled (NOUVEAU):`);
     console.log(`   Left: ${leftItems.join(', ')}`);
     console.log(`   Right: ${rightItems.join(', ')}`);
   }
@@ -223,7 +235,9 @@ class QuestionManager {
     const categories = [...(question.originalOptions.categories || [])];
     const items = [...(question.originalOptions.items || [])];
     
-    // Shuffle les items (pas les catégories)
+    console.log(`📋 Items originaux: ${items.join(', ')}`);
+    
+    // Shuffle les items (pas les catégories) - NOUVEAU MÉLANGE À CHAQUE FOIS
     this.shuffleArray(items);
     
     question.options = {
@@ -231,7 +245,7 @@ class QuestionManager {
       items: items  // Shufflé
     };
     
-    console.log(`🔀 Glisser-déposer shuffled: ${items.join(', ')}`);
+    console.log(`🔀 Glisser-déposer shuffled (NOUVEAU): ${items.join(', ')}`);
   }
   
   // ==========================================
@@ -253,15 +267,16 @@ class QuestionManager {
     const question = this.questions.find(q => q.id === questionId);
     if (!question) return false;
     
-    const answerData = this.answersData[questionId];
-    if (!answerData) return false;
+    // Récupérer la réponse depuis Supabase
+    if (!question.answer || !question.answer.value) return false;
     
-    const correctAnswer = answerData.answer;
+    const correctAnswer = question.answer.value;
+    const validateFlexible = question.answer.validateFlexible || false;
     const questionType = question.question_type;
     
     switch (questionType) {
       case 'input':
-        return this.validateInput(userAnswer, correctAnswer, answerData.validateFlexible);
+        return this.validateInput(userAnswer, correctAnswer, validateFlexible);
       
       case 'qcm':
         return userAnswer === correctAnswer;

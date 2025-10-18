@@ -18,9 +18,11 @@ class AIHintService {
     const questionId = questionData.id;
     const hintKey = `${questionId}_${hintNumber}`;
     
-    // Pour les questions INPUT : 2 hints autorisés
-    // Pour les autres types : 1 hint seulement
-    const maxHints = questionData.type === 'input' ? 2 : 1;
+    // Pour les questions INPUT : 3 hints autorisés
+    // Pour les autres types : 2 hints
+    const maxHints = questionData.type === 'input' || questionData.type === 'remplir-blancs'
+      ? (CONFIG.HINT_SYSTEM?.maxHintsInput || 3)
+      : (CONFIG.HINT_SYSTEM?.maxHintsOther || 2);
     
     // Vérifier si tous les hints ont été utilisés
     let usedCount = 0;
@@ -89,8 +91,10 @@ class AIHintService {
   
   createPrompt(questionData, hintNumber = 1) {
     const question = questionData.question;
+    const answer = questionData.answer;
     const type = questionData.type;
     const category = this.getCategoryName(questionData.category);
+    const options = questionData.options;
     
     let typeDescription = '';
     switch (type) {
@@ -117,51 +121,86 @@ class AIHintService {
         break;
     }
     
+    // Formater la réponse selon le type
+    let answerText = '';
+    if (typeof answer === 'object' && !Array.isArray(answer)) {
+      answerText = JSON.stringify(answer);
+    } else if (Array.isArray(answer)) {
+      answerText = answer.join(', ');
+    } else {
+      answerText = String(answer);
+    }
+    
+    // Formater les options si présentes
+    let optionsText = '';
+    if (options && type === 'qcm') {
+      optionsText = `\n- Options disponibles : ${options.join(', ')}`;
+    }
+    
     // Prompt progressif selon le numéro du hint
     let hintInstruction = '';
     if (hintNumber === 1) {
       hintInstruction = `
-- Donne un PREMIER indice général et encourageant
-- Oriente dans la bonne direction SANS donner la réponse
-- Reste vague et pédagogique`;
+📍 INDICE 1 (SUBTIL) :
+- Donne un indice GÉNÉRAL qui oriente vers la bonne réponse
+- Utilise des ASSOCIATIONS d'idées, des CONTEXTES, ou des CARACTÉRISTIQUES
+- NE mentionne PAS directement la réponse
+- Sois ENCOURAGEANT et PÉDAGOGIQUE
+- Maximum 25 mots`;
+    } else if (hintNumber === 2) {
+      hintInstruction = `
+📍 INDICE 2 (PLUS PRÉCIS) :
+- L'enfant a déjà eu un premier indice, il a besoin de PLUS DE PRÉCISION
+- Donne des DÉTAILS CONCRETS qui permettent vraiment de trouver
+- Tu peux mentionner des ÉLÉMENTS CLÉS de la réponse (premières lettres, dates, lieux, etc.)
+- Reste ENCOURAGEANT mais sois PLUS EXPLICITE
+- Maximum 30 mots`;
     } else {
       hintInstruction = `
-- C'est le DEUXIÈME indice, sois plus PRÉCIS que le premier
-- Donne plus de détails pour vraiment aider
-- Tu peux être plus direct, mais NE DONNE PAS la réponse exacte`;
+📍 INDICE 3 (TRÈS DIRECT) :
+- C'est le DERNIER indice, l'enfant a vraiment besoin d'aide maintenant !
+- Sois TRÈS EXPLICITE : donne la première lettre ou les 2-3 premières lettres
+- Mentionne des FAITS PRÉCIS qui mènent directement à la réponse
+- Donne presque la réponse, mais pas complètement
+- Maximum 35 mots`;
     }
     
-    return `Tu es un assistant pédagogique TRÈS bienveillant pour des ENFANTS (7-12 ans) qui jouent à un jeu de culture.
+    return `Tu es un assistant pédagogique pour des ENFANTS de 8 ans qui jouent à un jeu éducatif.
 
-CONTEXTE :
-- Public : Enfants de 7 à 12 ans (adapte ton langage !)
-- Question : "${question}"
-- Catégorie : ${category}
-- Type : ${typeDescription}
-- Indice numéro : ${hintNumber}
+📝 QUESTION : "${question}"${optionsText}
+✅ RÉPONSE CORRECTE : ${answerText}
+🎯 Type : ${typeDescription}
+📚 Catégorie : ${category}
 
-CONSIGNES STRICTES :
 ${hintInstruction}
-- Maximum 20 mots (COURT et CLAIR)
-- Commence TOUJOURS par "💡"
-- Utilise un vocabulaire SIMPLE adapté aux enfants
-- Ton ENCOURAGEANT et POSITIF
-- NE DONNE JAMAIS la réponse finale (très important !)
-- Aide-les à RÉFLÉCHIR par eux-mêmes
 
-EXEMPLES pour des enfants :
+🎨 STRATÉGIES D'INDICES EFFICACES :
 
-Premier indice (général) :
-- "💡 Pense à la plus grande ville de France, celle qu'on voit dans les films !"
-- "💡 C'est un événement très important qui a changé la France il y a longtemps"
-- "💡 C'est une formule avec H et O, pense à ce que tu bois tous les jours"
+Pour un QCM :
+- Indice 1 : "💡 Élimine les réponses impossibles ! Pense au pays où se trouve [élément lié]..."
+- Indice 2 : "💡 La réponse commence par la lettre '${answerText.charAt(0)}' et est connue pour [caractéristique]"
 
-Deuxième indice (plus précis, pour questions input) :
-- "💡 Cette ville est connue pour sa grande tour en métal et elle est sur la Seine"
-- "💡 Cet événement a eu lieu en 1789, les gens voulaient plus de liberté"
-- "💡 H2O : 2 lettres H (hydrogène) et 1 lettre O (oxygène)"
+Pour une question à réponse libre (input) :
+- Indice 1 : "💡 C'est une ville/un pays/une personne célèbre pour [caractéristique générale]"
+- Indice 2 : "💡 C'est lié à [contexte précis]. Pense à [élément important]"
+- Indice 3 : "💡 La réponse commence par '${answerText.substring(0, 2)}' et c'est [caractéristique unique]"
 
-TON INDICE (adapté aux enfants) :`;
+Pour Vrai/Faux :
+- Indice 1 : "💡 Réfléchis bien : est-ce que ça s'est vraiment passé comme ça ?"
+- Indice 2 : "💡 Pense à [élément factuel précis qui permet de trancher]"
+
+Pour ordre chronologique :
+- Indice 1 : "💡 Demande-toi : qu'est-ce qui s'est passé EN PREMIER dans le temps ?"
+- Indice 2 : "💡 Le premier événement est [indice], puis vient [indice sur le 2e]"
+
+RÈGLES ABSOLUES :
+✅ Commence TOUJOURS par "💡"
+✅ Langage SIMPLE pour un enfant de 8 ans
+✅ Ton ENCOURAGEANT ("Tu peux y arriver !", "C'est ça !", "Bien réfléchi !")
+❌ NE DONNE JAMAIS la réponse complète mot pour mot
+✅ Donne des INDICES CONCRETS et UTILES
+
+TON INDICE (adapté à un enfant de 8 ans) :`;
   }
   
   // ==========================================
@@ -223,30 +262,44 @@ TON INDICE (adapté aux enfants) :`;
   
   getFallbackHint(questionData, hintNumber = 1) {
     const type = questionData.type;
+    const answer = questionData.answer;
+    
+    // Pour les hints fallback, on peut être plus spécifiques
+    if (hintNumber === 2 && (type === 'input' || type === 'remplir-blancs')) {
+      // Deuxième hint : donner des indices précis
+      const answerStr = String(answer);
+      return `💡 Encore un indice : pense bien aux mots-clés de la question. La réponse a ${answerStr.length} lettres !`;
+    }
+    
+    if (hintNumber === 3 && (type === 'input' || type === 'remplir-blancs')) {
+      // Troisième hint : donner les premières lettres
+      const firstLetters = String(answer).substring(0, 2).toUpperCase();
+      return `💡 Dernier indice ! La réponse commence par "${firstLetters}..." Tu peux le faire !`;
+    }
     
     // Hints progressifs selon le numéro
     const fallbackHints = {
       'input': {
-        1: '💡 Réfléchis bien ! Parfois la réponse est plus simple qu\'on ne croit. Tu peux y arriver !',
-        2: '💡 Essaie de penser aux mots-clés de la question. Qu\'est-ce qui est important ici ?'
+        1: '💡 Lis bien la question ! Cherche le mot-clé principal. Qu\'est-ce qu\'on te demande exactement ?',
+        2: '💡 Réfléchis aux mots importants de la question. La réponse est souvent plus simple qu\'on croit !'
       },
       'qcm': {
-        1: '💡 Élimine d\'abord les réponses qui te semblent impossibles. Ensuite choisis parmi celles qui restent !'
+        1: '💡 Stratégie gagnante : Élimine les réponses clairement fausses ! Puis choisis la plus logique parmi celles qui restent.'
       },
       'vrai-faux': {
-        1: '💡 Prends ton temps pour bien lire la phrase. Est-ce que ça te semble juste ou faux ?'
+        1: '💡 Lis attentivement chaque mot. Demande-toi : "Est-ce que je suis sûr(e) que c\'est vrai ?" Si tu doutes, c\'est peut-être faux !'
       },
       'ordre': {
-        1: '💡 Pense à la chronologie : qu\'est-ce qui s\'est passé en premier ? Et après ?'
+        1: '💡 Astuce : Trouve d\'abord le tout PREMIER élément dans le temps, puis le DERNIER. Ensuite, place ceux du milieu !'
       },
       'association': {
-        1: '💡 Essaie de faire des connexions : qu\'est-ce qui va bien ensemble ?'
+        1: '💡 Cherche ce qui va ensemble : Quel pays avec quelle capitale ? Quel instrument avec quelle famille ? Fais des liens logiques !'
       },
       'glisser-deposer': {
-        1: '💡 Regarde les caractéristiques de chaque élément : dans quelle catégorie il va le mieux ?'
+        1: '💡 Commence par placer les éléments dont tu es SÛR(E), même si c\'est juste un ou deux. Ensuite réfléchis aux autres !'
       },
       'remplir-blancs': {
-        1: '💡 Quel mot manque pour que la phrase ait du sens ? Lis bien ce qui vient avant et après !'
+        1: '💡 Lis la phrase complète ! Quel type de mot manque : un nom ? un nombre ? un lieu ? Ça t\'aidera à trouver !'
       }
     };
     
@@ -255,7 +308,7 @@ TON INDICE (adapté aux enfants) :`;
       return hints[hintNumber];
     }
     
-    return '💡 Prends ton temps pour bien réfléchir à la question. Tu es capable de trouver !';
+    return '💡 Courage ! Relis bien la question, prends ton temps, et fais confiance à ce que tu sais. Tu vas trouver !';
   }
   
   // ==========================================
@@ -269,7 +322,9 @@ TON INDICE (adapté aux enfants) :`;
   
   // Vérifier combien de hints ont été utilisés pour une question
   getUsedHintCount(questionId, questionType) {
-    const maxHints = questionType === 'input' ? 2 : 1;
+    const maxHints = questionType === 'input' || questionType === 'remplir-blancs'
+      ? (CONFIG.HINT_SYSTEM?.maxHintsInput || 3)
+      : (CONFIG.HINT_SYSTEM?.maxHintsOther || 2);
     let count = 0;
     
     for (let i = 1; i <= maxHints; i++) {
