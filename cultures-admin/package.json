@@ -5,6 +5,12 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:root": "ng build --configuration production",
+    "build:admin": "ng build --configuration production-admin",
+    "build:cultures-admin": "ng build --configuration production-cultures-admin",
+    "build:jardin-iris": "ng build --base-href=/app/cultures-admin/",
+    "version:bump": "node bump-version.js",
+    "deploy": "npm run version:bump && npm run build:jardin-iris",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

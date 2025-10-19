@@ -12,6 +12,18 @@
           <option [value]="category.id">{{ category.name }}</option>
         }
       </select>
+      
+      <select 
+        [(ngModel)]="selectedQuestionType" 
+        (change)="onTypeFilterChange()"
+        class="type-filter"
+      >
+        <option [value]="undefined">Tous les types</option>
+        @for (type of questionTypes; track type.value) {
+          <option [value]="type.value">{{ type.label }}</option>
+        }
+      </select>
+
       <button (click)="openCreateForm()" class="btn-primary">
         ➕ Nouvelle Question
       </button>
@@ -31,23 +43,25 @@
           <div class="question-header">
             <span class="category-badge">{{ getCategoryName(question.category_id) }}</span>
             <span class="type-badge">{{ question.question_type }}</span>
-            <span class="difficulty-badge" [class]="'difficulty-' + question.difficulty">
-              {{ question.difficulty }}
-            </span>
+            @if (!question.is_active) {
+              <span class="inactive-badge">Inactif</span>
+            }
           </div>
           
           <div class="question-content">
             <h3>{{ question.question_text }}</h3>
-            <p class="correct-answer">✅ Réponse: {{ question.correct_answer }}</p>
             
-            @if (question.wrong_answers && question.wrong_answers.length > 0) {
-              <div class="wrong-answers">
-                <strong>Mauvaises réponses:</strong>
-                <ul>
-                  @for (answer of question.wrong_answers; track $index) {
-                    <li>{{ answer }}</li>
-                  }
-                </ul>
+            @if (question.options) {
+              <div class="options-preview">
+                <strong>Options:</strong> {{ question.options }}
+              </div>
+            }
+
+            @if (question.tags && question.tags.length > 0) {
+              <div class="tags">
+                @for (tag of question.tags; track $index) {
+                  <span class="tag">{{ tag }}</span>
+                }
               </div>
             }
 
@@ -86,6 +100,19 @@
         <form (ngSubmit)="onSubmit()">
           <div class="form-row">
             <div class="form-group">
+              <label for="id">ID *</label>
+              <input 
+                type="text" 
+                id="id" 
+                [(ngModel)]="formData().id"
+                name="id"
+                required
+                [disabled]="!!editingQuestion()"
+                placeholder="q_histoire_1"
+              >
+            </div>
+
+            <div class="form-group">
               <label for="category">Catégorie *</label>
               <select 
                 id="category" 
@@ -100,28 +127,16 @@
             </div>
 
             <div class="form-group">
-              <label for="type">Type de question *</label>
+              <label for="type">Type *</label>
               <select 
                 id="type" 
                 [(ngModel)]="formData().question_type"
                 name="type"
                 required
+                (change)="onTypeChange()"
               >
                 @for (type of questionTypes; track type.value) {
                   <option [value]="type.value">{{ type.label }}</option>
-                }
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="difficulty">Difficulté</label>
-              <select 
-                id="difficulty" 
-                [(ngModel)]="formData().difficulty"
-                name="difficulty"
-              >
-                @for (diff of difficulties; track diff.value) {
-                  <option [value]="diff.value">{{ diff.label }}</option>
                 }
               </select>
             </div>
@@ -139,49 +154,243 @@
             ></textarea>
           </div>
 
-          <div class="form-group">
-            <label for="correct">Réponse correcte *</label>
-            <input 
-              type="text" 
-              id="correct" 
-              [(ngModel)]="formData().correct_answer"
-              name="correct"
-              required
-              placeholder="La bonne réponse"
-            >
-          </div>
-
+          <!-- Options QCM -->
           @if (formData().question_type === 'qcm') {
-            <div class="form-group">
-              <label>Mauvaises réponses</label>
-              @for (answer of formData().wrong_answers; track $index) {
-                <div class="answer-input">
+            <div class="options-section">
+              <label>Options de réponses</label>
+              @for (option of qcmOptions(); track $index) {
+                <div class="option-input">
                   <input 
                     type="text" 
-                    [value]="answer"
-                    (input)="updateWrongAnswer($index, $any($event.target).value)"
-                    placeholder="Mauvaise réponse {{ $index + 1 }}"
+                    [value]="option"
+                    (input)="updateQcmOption($index, $any($event.target).value)"
+                    placeholder="Option {{ $index + 1 }}"
                   >
-                  @if (formData().wrong_answers.length > 1) {
-                    <button 
-                      type="button" 
-                      (click)="removeWrongAnswer($index)"
-                      class="btn-remove"
-                    >
-                      ✖️
-                    </button>
+                  @if (qcmOptions().length > 2) {
+                    <button type="button" (click)="removeQcmOption($index)" class="btn-remove">✖</button>
                   }
                 </div>
               }
-              <button 
-                type="button" 
-                (click)="addWrongAnswer()"
-                class="btn-add"
-              >
-                ➕ Ajouter une réponse
-              </button>
+              <button type="button" (click)="addQcmOption()" class="btn-add">➕ Ajouter une option</button>
             </div>
           }
+
+          <!-- Options Ordre -->
+          @if (formData().question_type === 'ordre') {
+            <div class="options-section">
+              <label>Items à ordonner</label>
+              @for (item of ordreItems(); track $index) {
+                <div class="option-input">
+                  <span class="order-number">{{ $index + 1 }}.</span>
+                  <input 
+                    type="text" 
+                    [value]="item"
+                    (input)="updateOrdreItem($index, $any($event.target).value)"
+                    placeholder="Item {{ $index + 1 }}"
+                  >
+                  @if (ordreItems().length > 2) {
+                    <button type="button" (click)="removeOrdreItem($index)" class="btn-remove">✖</button>
+                  }
+                </div>
+              }
+              <button type="button" (click)="addOrdreItem()" class="btn-add">➕ Ajouter un item</button>
+            </div>
+          }
+
+          <!-- Options Association -->
+          @if (formData().question_type === 'association') {
+            <div class="association-full">
+              <div class="association-section">
+                <div class="association-col">
+                  <label>Colonne gauche</label>
+                  @for (item of associationLeft(); track $index) {
+                    <div class="option-input">
+                      <input 
+                        type="text" 
+                        [value]="item"
+                        (input)="updateAssociationLeft($index, $any($event.target).value)"
+                        placeholder="Item gauche {{ $index + 1 }}"
+                      >
+                      @if (associationLeft().length > 2) {
+                        <button type="button" (click)="removeAssociationLeft($index)" class="btn-remove">✖</button>
+                      }
+                    </div>
+                  }
+                  <button type="button" (click)="addAssociationLeft()" class="btn-add-small">➕</button>
+                </div>
+
+                <div class="association-col">
+                  <label>Colonne droite (peut contenir + d'items)</label>
+                  @for (item of associationRight(); track $index) {
+                    <div class="option-input">
+                      <input 
+                        type="text" 
+                        [value]="item"
+                        (input)="updateAssociationRight($index, $any($event.target).value)"
+                        placeholder="Item droit {{ $index + 1 }}"
+                      >
+                      @if (associationRight().length > 2) {
+                        <button type="button" (click)="removeAssociationRight($index)" class="btn-remove">✖</button>
+                      }
+                    </div>
+                  }
+                  <button type="button" (click)="addAssociationRight()" class="btn-add-small">➕</button>
+                </div>
+              </div>
+
+              <div class="pairs-section">
+                <div class="pairs-header">
+                  <label>Bonnes paires (gauche → droite) *</label>
+                  <button type="button" (click)="autoGeneratePairs()" class="btn-auto">⚡ Auto-générer</button>
+                </div>
+                @if (associationPairs().length === 0) {
+                  <div class="info-box">
+                    Cliquez sur "Auto-générer" pour créer les paires à partir des items de gauche
+                  </div>
+                }
+                @for (pair of associationPairs(); track $index) {
+                  <div class="pair-input">
+                    <select 
+                      [value]="pair.left"
+                      (change)="updateAssociationPair($index, 'left', $any($event.target).value)"
+                      class="pair-select"
+                    >
+                      <option value="">-- Choisir gauche --</option>
+                      @for (item of associationLeft(); track item) {
+                        @if (item.trim()) {
+                          <option [value]="item">{{ item }}</option>
+                        }
+                      }
+                    </select>
+                    <span class="arrow">→</span>
+                    <select 
+                      [value]="pair.right"
+                      (change)="updateAssociationPair($index, 'right', $any($event.target).value)"
+                      class="pair-select"
+                    >
+                      <option value="">-- Choisir droite --</option>
+                      @for (item of associationRight(); track item) {
+                        @if (item.trim()) {
+                          <option [value]="item">{{ item }}</option>
+                        }
+                      }
+                    </select>
+                    <button type="button" (click)="removeAssociationPair($index)" class="btn-remove">✖</button>
+                  </div>
+                }
+                <button type="button" (click)="addAssociationPair()" class="btn-add">➕ Ajouter une paire</button>
+              </div>
+            </div>
+          }
+
+          <!-- Options Glisser-Déposer -->
+          @if (formData().question_type === 'glisser-deposer') {
+            <div class="glisser-section">
+              <div class="glisser-col">
+                <label>Catégories</label>
+                @for (cat of glisserCategories(); track $index) {
+                  <div class="option-input">
+                    <input 
+                      type="text" 
+                      [value]="cat"
+                      (input)="updateGlisserCategory($index, $any($event.target).value)"
+                      placeholder="Catégorie {{ $index + 1 }}"
+                    >
+                    @if (glisserCategories().length > 2) {
+                      <button type="button" (click)="removeGlisserCategory($index)" class="btn-remove">✖</button>
+                    }
+                  </div>
+                }
+                <button type="button" (click)="addGlisserCategory()" class="btn-add-small">➕</button>
+              </div>
+
+              <div class="glisser-col">
+                <label>Items à classer</label>
+                @for (item of glisserItems(); track $index) {
+                  <div class="option-input">
+                    <input 
+                      type="text" 
+                      [value]="item"
+                      (input)="updateGlisserItem($index, $any($event.target).value)"
+                      placeholder="Item {{ $index + 1 }}"
+                    >
+                    @if (glisserItems().length > 2) {
+                      <button type="button" (click)="removeGlisserItem($index)" class="btn-remove">✖</button>
+                    }
+                  </div>
+                }
+                <button type="button" (click)="addGlisserItem()" class="btn-add-small">➕</button>
+              </div>
+            </div>
+          }
+
+          <!-- Réponse pour Vrai-Faux -->
+          @if (formData().question_type === 'vrai-faux') {
+            <div class="vraifaux-section">
+              <label>Bonne réponse *</label>
+              <div class="vraifaux-buttons">
+                <button 
+                  type="button"
+                  [class.active]="formData().answer === 'Vrai' || formData().answer === true"
+                  (click)="formData().answer = 'Vrai'"
+                  class="vraifaux-btn vrai-btn"
+                >
+                  ✓ Vrai
+                </button>
+                <button 
+                  type="button"
+                  [class.active]="formData().answer === 'Faux' || formData().answer === false"
+                  (click)="formData().answer = 'Faux'"
+                  class="vraifaux-btn faux-btn"
+                >
+                  ✗ Faux
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Réponse pour Input -->
+          @if (formData().question_type === 'input') {
+            <div class="form-group">
+              <label for="answer">Réponse correcte *</label>
+              <input 
+                type="text" 
+                id="answer" 
+                [(ngModel)]="formData().answer"
+                name="answer"
+                required
+                placeholder="La bonne réponse"
+              >
+            </div>
+          }
+
+          <!-- Info pour Remplir-blancs -->
+          @if (formData().question_type === 'remplir-blancs') {
+            <div class="info-box">
+              ℹ️ Pour "Remplir les blancs", indiquez la réponse ci-dessous
+            </div>
+            <div class="form-group">
+              <label for="answer-blancs">Réponse correcte</label>
+              <input 
+                type="text" 
+                id="answer-blancs" 
+                [(ngModel)]="formData().answer"
+                name="answer"
+                placeholder="Réponse pour les blancs"
+              >
+            </div>
+          }
+
+          <div class="form-group">
+            <label for="tags">Tags (séparés par des virgules)</label>
+            <input 
+              type="text" 
+              id="tags" 
+              [value]="formData().tags.join(', ')"
+              (input)="updateTags($any($event.target).value)"
+              placeholder="géographie, europe, capitales"
+            >
+          </div>
 
           <div class="form-group">
             <label for="hint">Indice</label>
@@ -190,19 +399,19 @@
               id="hint" 
               [(ngModel)]="formData().hint"
               name="hint"
-              placeholder="Un petit indice pour aider..."
+              placeholder="Un petit indice..."
             >
           </div>
 
           <div class="form-group">
-            <label for="explanation">Explication</label>
-            <textarea 
-              id="explanation" 
-              [(ngModel)]="formData().explanation"
-              name="explanation"
-              rows="3"
-              placeholder="Explication de la réponse..."
-            ></textarea>
+            <label>
+              <input 
+                type="checkbox" 
+                [(ngModel)]="formData().is_active"
+                name="is_active"
+              >
+              Question active
+            </label>
           </div>
 
           <div class="form-actions">
@@ -218,4 +427,3 @@
     </div>
   }
 </div>
-

@@ -13,7 +13,7 @@ export class DataService {
   
   async getCategories(): Promise<Category[]> {
     const { data, error } = await this.supabase.client
-      .from('categories')
+      .from('cultures_categories')
       .select('*')
       .order('name');
     
@@ -23,7 +23,7 @@ export class DataService {
 
   async getCategoryById(id: number): Promise<Category | null> {
     const { data, error } = await this.supabase.client
-      .from('categories')
+      .from('cultures_categories')
       .select('*')
       .eq('id', id)
       .single();
@@ -34,7 +34,7 @@ export class DataService {
 
   async createCategory(category: Partial<Category>): Promise<Category> {
     const { data, error } = await this.supabase.client
-      .from('categories')
+      .from('cultures_categories')
       .insert(category)
       .select()
       .single();
@@ -45,7 +45,7 @@ export class DataService {
 
   async updateCategory(id: number, category: Partial<Category>): Promise<Category> {
     const { data, error } = await this.supabase.client
-      .from('categories')
+      .from('cultures_categories')
       .update(category)
       .eq('id', id)
       .select()
@@ -57,7 +57,7 @@ export class DataService {
 
   async deleteCategory(id: number): Promise<void> {
     const { error } = await this.supabase.client
-      .from('categories')
+      .from('cultures_categories')
       .delete()
       .eq('id', id);
     
@@ -68,7 +68,7 @@ export class DataService {
 
   async getQuestions(categoryId?: number): Promise<Question[]> {
     let query = this.supabase.client
-      .from('questions')
+      .from('cultures_questions')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -82,9 +82,9 @@ export class DataService {
     return data || [];
   }
 
-  async getQuestionById(id: number): Promise<Question | null> {
+  async getQuestionById(id: string): Promise<Question | null> {
     const { data, error } = await this.supabase.client
-      .from('questions')
+      .from('cultures_questions')
       .select('*')
       .eq('id', id)
       .single();
@@ -95,7 +95,7 @@ export class DataService {
 
   async createQuestion(question: Partial<Question>): Promise<Question> {
     const { data, error } = await this.supabase.client
-      .from('questions')
+      .from('cultures_questions')
       .insert(question)
       .select()
       .single();
@@ -104,9 +104,9 @@ export class DataService {
     return data;
   }
 
-  async updateQuestion(id: number, question: Partial<Question>): Promise<Question> {
+  async updateQuestion(id: string, question: Partial<Question>): Promise<Question> {
     const { data, error } = await this.supabase.client
-      .from('questions')
+      .from('cultures_questions')
       .update(question)
       .eq('id', id)
       .select()
@@ -116,9 +116,9 @@ export class DataService {
     return data;
   }
 
-  async deleteQuestion(id: number): Promise<void> {
+  async deleteQuestion(id: string): Promise<void> {
     const { error } = await this.supabase.client
-      .from('questions')
+      .from('cultures_questions')
       .delete()
       .eq('id', id);
     
