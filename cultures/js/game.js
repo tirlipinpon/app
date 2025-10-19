@@ -3,7 +3,7 @@
 // ============================================
 // Version: 2.1.9
 
-const GAME_VERSION = '2.2.2';
+const GAME_VERSION = '2.3.0';
 
 class CultureGame {
   constructor() {
@@ -308,7 +308,7 @@ class CultureGame {
     
     // Afficher la question
     console.time('⏱️ displayQuestion');
-    this.ui.displayQuestion(questionData.question);
+    this.ui.displayQuestion(questionData.question, questionData.category);
     console.timeEnd('⏱️ displayQuestion');
     
     // Créer l'interface de réponse

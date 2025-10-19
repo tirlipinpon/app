@@ -22,14 +22,28 @@ class UIManager {
   // AFFICHAGE DES QUESTIONS
   // ==========================================
   
-  displayQuestion(questionText) {
+  displayQuestion(questionText, categoryId = null) {
     const questionTextElement = document.getElementById('questionText');
+    const categoryBadge = document.getElementById('questionCategoryBadge');
+    
     if (questionTextElement) {
       console.log('📝 Affichage de la question:', questionText);
       questionTextElement.textContent = questionText;
       console.log('✅ Question affichée dans le DOM');
     } else {
       console.error('❌ Element questionText introuvable !');
+    }
+    
+    // Afficher le badge de catégorie
+    if (categoryBadge && categoryId) {
+      const category = getCategoryById(categoryId);
+      if (category) {
+        categoryBadge.textContent = `${category.icon} ${category.name}`;
+        categoryBadge.style.display = 'inline-block';
+        console.log('🏷️ Badge catégorie affiché:', category.name);
+      } else {
+        categoryBadge.style.display = 'none';
+      }
     }
   }
   
