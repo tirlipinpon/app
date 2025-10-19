@@ -1,5 +1,34 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.1.14 - 19/10/2025 🐛 CORRECTION CRITIQUE - Progression des Hints
+
+### 🚨 Bug critique corrigé
+
+#### Hints bloqués au numéro 1
+
+- **Problème** : Cliquer 3 fois sur "Besoin d'aide ?" donnait 3 fois le hint 1
+- **Cause** : `getUsedHintCount()` cherchait `q_science_1_1` mais hint enregistré avec `q_science_1_hint_1`
+- **Impact** : Le système ne trouvait JAMAIS les hints déjà utilisés
+- **Résultat** : `getNextHintNumber()` retournait toujours 1
+
+#### Corrections (lignes 35 et 591)
+
+```javascript
+// AVANT
+if (this.usedHints.has(`${questionId}_${i}`))
+
+// MAINTENANT
+if (this.usedHints.has(`${questionId}_hint_${i}`))
+```
+
+### ✅ Résultat
+
+- Progression correcte : Hint 1 → Hint 2 → Hint 3
+- L'historique des hints fonctionne maintenant
+- Payloads progressifs envoyés à l'IA
+
+---
+
 ## v2.1.13 - 19/10/2025 🐛 CORRECTION CRITIQUE - Historique des Hints
 
 ### 🚨 Bugs critiques corrigés

@@ -32,7 +32,7 @@ class AIHintService {
     // Vérifier si tous les hints ont été utilisés
     let usedCount = 0;
     for (let i = 1; i <= maxHints; i++) {
-      if (this.usedHints.has(`${questionId}_${i}`)) {
+      if (this.usedHints.has(`${questionId}_hint_${i}`)) { // ✅ CORRECTION: Ajout de "_hint_"
         usedCount++;
       }
     }
@@ -588,7 +588,7 @@ TON INDICE (adapté à un enfant de 8 ans) :`;
     let count = 0;
     
     for (let i = 1; i <= maxHints; i++) {
-      if (this.usedHints.has(`${questionId}_${i}`)) {
+      if (this.usedHints.has(`${questionId}_hint_${i}`)) { // ✅ CORRECTION: Ajout de "_hint_"
         count++;
       }
     }
