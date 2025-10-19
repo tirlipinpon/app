@@ -65,7 +65,7 @@ class InputHandler {
         break;
       
       case 'remplir-blancs':
-        this.setupRemplirBlancsType();
+        this.setupRemplirBlancsType(questionData);
         break;
     }
   }
@@ -550,41 +550,168 @@ class InputHandler {
   }
   
   // ==========================================
-  // TYPE: REMPLIR-BLANCS
+  // TYPE: REMPLIR-BLANCS (avec letter-boxes)
   // ==========================================
   
-  setupRemplirBlancsType() {
-    const input = document.querySelector('.blanks-input');
+  setupRemplirBlancsType(questionData) {
+    this.currentInput = '';
+    this.currentQuestionData = questionData;
+    // Normaliser la réponse (retirer les accents)
+    this.correctAnswer = this.removeAccents(String(questionData.answer).toUpperCase());
+    
+    // Setup clavier physique
+    const keydownHandler = (e) => this.handleBlanksKeyPress(e);
+    document.addEventListener('keydown', keydownHandler);
+    this.currentInteractions.push({ 
+      element: document, 
+      event: 'keydown', 
+      handler: keydownHandler 
+    });
+    
+    // Setup mobile input
+    this.setupMobileInputBlanks();
+    
+    // Setup bouton submit
     const submitBtn = document.getElementById('submitBlanks');
+    if (submitBtn) {
+      const handleClick = () => this.submitBlanksAnswer();
+      submitBtn.addEventListener('click', handleClick);
+      this.currentInteractions.push({ 
+        element: submitBtn, 
+        event: 'click', 
+        handler: handleClick 
+      });
+    }
     
-    if (!input || !submitBtn) return;
+    // Click sur word display pour focus mobile
+    const wordDisplay = document.getElementById('wordDisplayBlanks');
+    if (wordDisplay) {
+      const clickHandler = () => {
+        if (this.isMobileDevice()) {
+          const mobileInput = document.getElementById('mobileInputBlanks');
+          if (mobileInput) mobileInput.focus();
+        }
+      };
+      wordDisplay.addEventListener('click', clickHandler);
+      this.currentInteractions.push({ 
+        element: wordDisplay, 
+        event: 'click', 
+        handler: clickHandler 
+      });
+    }
+  }
+  
+  handleBlanksKeyPress(e) {
+    // Ignorer si un input/select est focus (sauf mobileInputBlanks)
+    const activeElement = document.activeElement;
+    if (activeElement && 
+        (activeElement.tagName === 'INPUT' && activeElement.id !== 'mobileInputBlanks') ||
+        activeElement.tagName === 'SELECT') {
+      return;
+    }
     
-    const handleKeyPress = (e) => {
-      if (e.key === 'Enter') {
-        this.submitBlanksAnswer();
+    const letterBoxes = document.querySelectorAll('#wordDisplayBlanks .letter-box');
+    if (!letterBoxes.length) return;
+    
+    // Backspace
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      if (this.currentInput.length > 0) {
+        const lastIndex = this.currentInput.length - 1;
+        if (!letterBoxes[lastIndex].classList.contains('letter-correct')) {
+          this.currentInput = this.currentInput.slice(0, -1);
+          this.updateBlanksLetterBoxes();
+        }
       }
-    };
+      return;
+    }
     
-    const handleClick = () => {
-      this.submitBlanksAnswer();
-    };
+    // Lettres ET chiffres
+    if (e.key.length === 1 && /[a-zA-ZÀ-ÿ0-9]/.test(e.key)) {
+      e.preventDefault();
+      
+      if (this.currentInput.length < this.correctAnswer.length) {
+        const normalizedKey = /[0-9]/.test(e.key) 
+          ? e.key 
+          : this.removeAccents(e.key.toUpperCase());
+        this.currentInput += normalizedKey;
+        this.updateBlanksLetterBoxes();
+      }
+    }
+  }
+  
+  setupMobileInputBlanks() {
+    const mobileInput = document.getElementById('mobileInputBlanks');
+    if (!mobileInput) return;
     
-    input.addEventListener('keypress', handleKeyPress);
-    submitBtn.addEventListener('click', handleClick);
+    let previousValue = '';
     
-    this.currentInteractions.push(
-      { element: input, event: 'keypress', handler: handleKeyPress },
-      { element: submitBtn, event: 'click', handler: handleClick }
-    );
+    mobileInput.addEventListener('input', (e) => {
+      const value = e.target.value.toUpperCase();
+      
+      if (value.length > previousValue.length) {
+        const newChar = value[value.length - 1];
+        if (/[A-ZÀ-ÿ0-9]/.test(newChar) && this.currentInput.length < this.correctAnswer.length) {
+          const normalizedChar = /[0-9]/.test(newChar) 
+            ? newChar 
+            : this.removeAccents(newChar);
+          this.currentInput += normalizedChar;
+          this.updateBlanksLetterBoxes();
+        }
+      } else if (value.length < previousValue.length) {
+        if (this.currentInput.length > 0) {
+          const letterBoxes = document.querySelectorAll('#wordDisplayBlanks .letter-box');
+          const lastIndex = this.currentInput.length - 1;
+          if (!letterBoxes[lastIndex].classList.contains('letter-correct')) {
+            this.currentInput = this.currentInput.slice(0, -1);
+            this.updateBlanksLetterBoxes();
+          }
+        }
+      }
+      
+      previousValue = value;
+      
+      setTimeout(() => {
+        e.target.value = '';
+        previousValue = '';
+      }, 10);
+    });
+  }
+  
+  updateBlanksLetterBoxes() {
+    const letterBoxes = document.querySelectorAll('#wordDisplayBlanks .letter-box');
     
-    input.focus();
+    for (let i = 0; i < letterBoxes.length; i++) {
+      if (i < this.currentInput.length) {
+        const letter = this.currentInput[i];
+        letterBoxes[i].textContent = letter;
+        
+        // Validation en temps réel
+        if (letter === this.correctAnswer[i]) {
+          letterBoxes[i].className = 'letter-box letter-correct';
+        } else if (this.correctAnswer.includes(letter)) {
+          letterBoxes[i].className = 'letter-box letter-wrong-place';
+        } else {
+          letterBoxes[i].className = 'letter-box letter-wrong';
+        }
+      } else {
+        letterBoxes[i].textContent = '?';
+        letterBoxes[i].className = 'letter-box';
+      }
+    }
+    
+    // Curseur
+    for (let i = 0; i < letterBoxes.length; i++) {
+      letterBoxes[i].classList.remove('cursor');
+    }
+    
+    if (this.currentInput.length < letterBoxes.length) {
+      letterBoxes[this.currentInput.length].classList.add('cursor');
+    }
   }
   
   submitBlanksAnswer() {
-    const input = document.querySelector('.blanks-input');
-    if (!input) return;
-    
-    const answer = input.value.trim();
+    const answer = this.currentInput.trim();
     if (answer === '') {
       this.game.ui.showFeedback('Merci de remplir le blanc !', 'error');
       return;
@@ -618,12 +745,19 @@ class InputHandler {
         break;
       
       case 'remplir-blancs':
-        // Vider le champ et refocus
-        const input = document.querySelector('.blanks-input');
-        if (input) {
-          input.value = '';
-          input.disabled = false;
-          input.focus();
+        // Réinitialiser les letter boxes (ne garder que les vertes)
+        this.currentInput = '';
+        const blanksBoxes = document.querySelectorAll('#wordDisplayBlanks .letter-box');
+        blanksBoxes.forEach(box => {
+          if (!box.classList.contains('letter-correct')) {
+            box.textContent = '?';
+            box.className = 'letter-box';
+          } else {
+            this.currentInput += box.textContent;
+          }
+        });
+        if (blanksBoxes.length > 0) {
+          this.updateBlanksLetterBoxes();
         }
         break;
       

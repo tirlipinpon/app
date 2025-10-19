@@ -335,12 +335,41 @@ class UIManager {
     const parts = questionText.split('___');
     const answerContainer = document.getElementById('answerContainer');
     
+    // Récupérer la longueur de la réponse pour les letter-boxes
+    const answer = questionData?.answer || '';
+    const normalizedAnswer = this.normalizeAnswer(String(answer));
+    const answerLength = normalizedAnswer.length;
+    
+    // Créer les letter boxes pour le blanc
+    let letterBoxesHtml = '';
+    for (let i = 0; i < answerLength; i++) {
+      letterBoxesHtml += `<div class="letter-box" data-index="${i}">?</div>`;
+    }
+    
     let html = '<div class="blanks-container">';
     
     parts.forEach((part, index) => {
       html += `<span class="blanks-text">${this.escapeHtml(part)}</span>`;
       if (index < parts.length - 1) {
-        html += `<input type="text" class="blanks-input" placeholder="..." autocomplete="off" />`;
+        // Ajouter les letter boxes au lieu d'un input
+        html += `
+          <div class="blanks-word-display">
+            <input 
+              type="text" 
+              id="mobileInputBlanks" 
+              class="mobile-input-answer" 
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              maxlength="${answerLength}"
+              placeholder="Tape ici..."
+            />
+            <div class="word-display-blanks" id="wordDisplayBlanks">
+              ${letterBoxesHtml}
+            </div>
+          </div>
+        `;
       }
     });
     

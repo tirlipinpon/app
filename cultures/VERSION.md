@@ -1,5 +1,65 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.0.0 - 19/10/2025 🎮 Mise à jour MAJEURE
+
+### ✨ Nouveautés principales
+
+#### 🗄️ Architecture : Réponses dans Supabase
+
+- **Champ `answer`** (JSONB) ajouté dans la table `cultures_questions`
+- **Gestion centralisée** : Plus besoin de modifier le code pour ajouter des questions
+- **60 nouvelles questions** adaptées aux enfants de 8 ans
+- **Total : 90 questions** (30 originales + 60 nouvelles)
+
+#### 📦 Interface Letter-Boxes (comme "Mots")
+
+- **Cases individuelles** pour questions INPUT et REMPLIR-BLANCS
+- **Validation EN TEMPS RÉEL** lettre par lettre :
+  - 🟢 VERT : Lettre correcte à la bonne position (verrouillée)
+  - 🟡 JAUNE : Lettre existe mais mauvaise position
+  - 🔴 ROUGE : Lettre n'existe pas
+- **Lettres vertes verrouillées** : Ne peuvent pas être effacées
+- **Curseur intelligent** : Se positionne automatiquement
+- **Support mobile** : Input invisible + clavier tactile
+
+#### 🎯 Système d'essais amélioré
+
+- **3 tentatives** par question
+- **Compteur visuel** : "Encore X essais"
+- **Affichage automatique** de la bonne réponse après 3 échecs
+- Suppression des boutons "Réessayer/Passer" (inutiles)
+
+#### 🧠 Validation intelligente
+
+- **Ignore majuscules/minuscules** : "Paris" = "paris" = "PARIS"
+- **Ignore les accents** : "éléphant" = "elephant"
+- **Caractères spéciaux** : "œ" → "oe", "Cœur" = "Coeur"
+- **Chiffres acceptés** : "8", "1989", "H2O", etc.
+
+#### 💡 Hints améliorés
+
+- **3 hints** pour INPUT/REMPLIR-BLANCS (au lieu de 2)
+- **2 hints** pour autres types (au lieu de 1)
+- **Prompt IA optimisé** : Réponse fournie à l'IA pour meilleurs indices
+- **Hints progressifs** : Subtil → Précis → Très direct
+- **Loader discret** : Petit spinner dans le bouton
+- **Temperature : 0.8** | **Max tokens : 150**
+
+### 🔧 Corrections de bugs
+
+- ✅ Bouton "Déconnexion" maintenant visible
+- ✅ Validation `false` (questions vrai/faux) corrigée
+- ✅ Normalisation complète des réponses
+
+### 📚 Contenu
+
+- 20 questions Culture générale enfants
+- 20 questions Science enfants
+- 20 questions Histoire enfants
+- Adaptées au niveau CE2/CM1 (8 ans)
+
+---
+
 ## v1.0.2 - 18/10/2025 💡 Hints améliorés pour enfants
 
 ### ✨ Nouveautés
@@ -143,4 +203,4 @@ Un simple **F5** charge automatiquement la dernière version ! ✅
 
 ---
 
-**Version actuelle : v1.0.1** ✅
+**Version actuelle : v2.0.0** ✅
