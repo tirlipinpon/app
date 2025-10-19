@@ -1,5 +1,30 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.1.15 - 19/10/2025 🎯 Amélioration Input Letter-Box
+
+### 🎮 Expérience utilisateur améliorée
+
+#### Logique de blocage des lettres (comme Mots)
+
+- **Blocage de progression** : Impossible d'avancer avec une lettre rouge/jaune
+- **Protection des lettres vertes** : Impossible de les supprimer avec backspace
+- **Remplacement automatique** : Nouvelle lettre remplace l'ancienne si fausse
+- **Feedback immédiat** : "🚫 Tu ne peux pas supprimer les lettres vertes !"
+
+#### Validation automatique
+
+- Quand toutes les lettres sont vertes → **validation automatique (0.3s)**
+- Plus besoin du bouton bleu "Valider"
+- Fonctionne pour INPUT et REMPLIR-BLANCS
+
+#### Nouvelles fonctions
+
+- `countConsecutiveGreenLetters()` - Compte les lettres vertes depuis le début
+- `countConsecutiveGreenLettersBlanks()` - Même chose pour blancs
+- Logique appliquée sur desktop ET mobile
+
+---
+
 ## v2.1.14 - 19/10/2025 🐛 CORRECTION CRITIQUE - Progression des Hints
 
 ### 🚨 Bug critique corrigé

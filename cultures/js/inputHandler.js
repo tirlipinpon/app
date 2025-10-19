@@ -134,16 +134,27 @@ class InputHandler {
     const letterBoxes = document.querySelectorAll('#wordDisplayAnswer .letter-box');
     if (!letterBoxes.length) return;
     
+    // Compter les lettres vertes consécutives depuis le début
+    const consecutiveGreenCount = this.countConsecutiveGreenLetters(letterBoxes);
+    
     // Backspace
     if (e.key === 'Backspace') {
       e.preventDefault();
       if (this.currentInput.length > 0) {
-        // Ne pas supprimer les lettres vertes verrouillées
-        const lastIndex = this.currentInput.length - 1;
-        if (!letterBoxes[lastIndex].classList.contains('letter-correct')) {
-          this.currentInput = this.currentInput.slice(0, -1);
-          this.updateLetterBoxes();
+        // Empêcher de supprimer les lettres vertes
+        if (this.currentInput.length <= consecutiveGreenCount) {
+          // Afficher un feedback
+          const feedback = document.getElementById('feedback');
+          if (feedback) {
+            feedback.textContent = '🚫 Tu ne peux pas supprimer les lettres vertes !';
+            feedback.className = 'feedback warning';
+            feedback.classList.remove('hidden');
+          }
+          return;
         }
+        
+        this.currentInput = this.currentInput.slice(0, -1);
+        this.updateLetterBoxes();
       }
       return;
     }
@@ -151,6 +162,19 @@ class InputHandler {
     // Lettres ET chiffres (accepter aussi les lettres accentuées)
     if (e.key.length === 1 && /[a-zA-ZÀ-ÿ0-9]/.test(e.key)) {
       e.preventDefault();
+      
+      // Si on a des lettres vertes, on ne peut ajouter qu'après elles
+      // Vérifier qu'on n'a pas de lettre rouge/jaune avant de continuer
+      if (this.currentInput.length > consecutiveGreenCount) {
+        // Il y a au moins une lettre non-verte
+        const cursorPos = this.currentInput.length - 1;
+        const currentBox = letterBoxes[cursorPos];
+        if (currentBox && (currentBox.classList.contains('letter-wrong') || currentBox.classList.contains('letter-wrong-place'))) {
+          // Ne pas permettre d'avancer tant que la lettre actuelle est fausse
+          // On remplace la dernière lettre au lieu d'en ajouter une nouvelle
+          this.currentInput = this.currentInput.slice(0, -1);
+        }
+      }
       
       if (this.currentInput.length < this.correctAnswer.length) {
         // Retirer les accents avant d'ajouter (si c'est une lettre)
@@ -163,6 +187,19 @@ class InputHandler {
     }
   }
   
+  // Compter les lettres vertes consécutives depuis le début
+  countConsecutiveGreenLetters(letterBoxes) {
+    let count = 0;
+    for (let i = 0; i < letterBoxes.length; i++) {
+      if (letterBoxes[i].classList.contains('letter-correct')) {
+        count++;
+      } else {
+        break; // Arrêter dès qu'on trouve une lettre non-verte
+      }
+    }
+    return count;
+  }
+  
   setupMobileInputAnswer() {
     const mobileInput = document.getElementById('mobileInputAnswer');
     if (!mobileInput) return;
@@ -171,24 +208,44 @@ class InputHandler {
     
     mobileInput.addEventListener('input', (e) => {
       const value = e.target.value.toUpperCase();
+      const letterBoxes = document.querySelectorAll('#wordDisplayAnswer .letter-box');
+      const consecutiveGreenCount = this.countConsecutiveGreenLetters(letterBoxes);
       
       if (value.length > previousValue.length) {
         // Nouvelle lettre/chiffre (accepter les lettres accentuées ET les chiffres)
         const newChar = value[value.length - 1];
-        if (/[A-ZÀ-ÿ0-9]/.test(newChar) && this.currentInput.length < this.correctAnswer.length) {
-          // Retirer les accents si c'est une lettre
-          const normalizedChar = /[0-9]/.test(newChar) 
-            ? newChar 
-            : this.removeAccents(newChar);
-          this.currentInput += normalizedChar;
-          this.updateLetterBoxes();
+        if (/[A-ZÀ-ÿ0-9]/.test(newChar)) {
+          // Vérifier qu'on n'a pas de lettre rouge/jaune avant de continuer
+          if (this.currentInput.length > consecutiveGreenCount) {
+            const cursorPos = this.currentInput.length - 1;
+            const currentBox = letterBoxes[cursorPos];
+            if (currentBox && (currentBox.classList.contains('letter-wrong') || currentBox.classList.contains('letter-wrong-place'))) {
+              // Remplacer la dernière lettre fausse
+              this.currentInput = this.currentInput.slice(0, -1);
+            }
+          }
+          
+          if (this.currentInput.length < this.correctAnswer.length) {
+            // Retirer les accents si c'est une lettre
+            const normalizedChar = /[0-9]/.test(newChar) 
+              ? newChar 
+              : this.removeAccents(newChar);
+            this.currentInput += normalizedChar;
+            this.updateLetterBoxes();
+          }
         }
       } else if (value.length < previousValue.length) {
         // Backspace
         if (this.currentInput.length > 0) {
-          const letterBoxes = document.querySelectorAll('#wordDisplayAnswer .letter-box');
-          const lastIndex = this.currentInput.length - 1;
-          if (!letterBoxes[lastIndex].classList.contains('letter-correct')) {
+          // Empêcher de supprimer les lettres vertes
+          if (this.currentInput.length <= consecutiveGreenCount) {
+            const feedback = document.getElementById('feedback');
+            if (feedback) {
+              feedback.textContent = '🚫 Tu ne peux pas supprimer les lettres vertes !';
+              feedback.className = 'feedback warning';
+              feedback.classList.remove('hidden');
+            }
+          } else {
             this.currentInput = this.currentInput.slice(0, -1);
             this.updateLetterBoxes();
           }
@@ -259,6 +316,27 @@ class InputHandler {
     
     if (this.currentInput.length < letterBoxes.length) {
       letterBoxes[this.currentInput.length].classList.add('cursor');
+    }
+    
+    // ✅ Validation automatique si toutes les lettres sont vertes
+    const submitBtn = document.getElementById('submitBtn');
+    if (this.currentInput.length === this.correctAnswer.length) {
+      const allCorrect = this.currentInput === this.correctAnswer;
+      if (allCorrect) {
+        // Cacher le bouton valider (validation automatique)
+        if (submitBtn) submitBtn.style.display = 'none';
+        
+        // Petit délai pour que l'utilisateur voie la dernière lettre devenir verte
+        setTimeout(() => {
+          this.submitInputAnswer();
+        }, 300);
+      } else {
+        // Afficher le bouton si le mot est complet mais incorrect
+        if (submitBtn) submitBtn.style.display = 'block';
+      }
+    } else {
+      // Afficher le bouton si le mot n'est pas complet
+      if (submitBtn) submitBtn.style.display = 'block';
     }
   }
   
@@ -613,15 +691,26 @@ class InputHandler {
     const letterBoxes = document.querySelectorAll('#wordDisplayBlanks .letter-box');
     if (!letterBoxes.length) return;
     
+    // Compter les lettres vertes consécutives depuis le début
+    const consecutiveGreenCount = this.countConsecutiveGreenLettersBlanks(letterBoxes);
+    
     // Backspace
     if (e.key === 'Backspace') {
       e.preventDefault();
       if (this.currentInput.length > 0) {
-        const lastIndex = this.currentInput.length - 1;
-        if (!letterBoxes[lastIndex].classList.contains('letter-correct')) {
-          this.currentInput = this.currentInput.slice(0, -1);
-          this.updateBlanksLetterBoxes();
+        // Empêcher de supprimer les lettres vertes
+        if (this.currentInput.length <= consecutiveGreenCount) {
+          const feedback = document.getElementById('feedback');
+          if (feedback) {
+            feedback.textContent = '🚫 Tu ne peux pas supprimer les lettres vertes !';
+            feedback.className = 'feedback warning';
+            feedback.classList.remove('hidden');
+          }
+          return;
         }
+        
+        this.currentInput = this.currentInput.slice(0, -1);
+        this.updateBlanksLetterBoxes();
       }
       return;
     }
@@ -629,6 +718,16 @@ class InputHandler {
     // Lettres ET chiffres
     if (e.key.length === 1 && /[a-zA-ZÀ-ÿ0-9]/.test(e.key)) {
       e.preventDefault();
+      
+      // Vérifier qu'on n'a pas de lettre rouge/jaune avant de continuer
+      if (this.currentInput.length > consecutiveGreenCount) {
+        const cursorPos = this.currentInput.length - 1;
+        const currentBox = letterBoxes[cursorPos];
+        if (currentBox && (currentBox.classList.contains('letter-wrong') || currentBox.classList.contains('letter-wrong-place'))) {
+          // Remplacer la dernière lettre fausse
+          this.currentInput = this.currentInput.slice(0, -1);
+        }
+      }
       
       if (this.currentInput.length < this.correctAnswer.length) {
         const normalizedKey = /[0-9]/.test(e.key) 
@@ -640,6 +739,19 @@ class InputHandler {
     }
   }
   
+  // Compter les lettres vertes consécutives pour blanks
+  countConsecutiveGreenLettersBlanks(letterBoxes) {
+    let count = 0;
+    for (let i = 0; i < letterBoxes.length; i++) {
+      if (letterBoxes[i].classList.contains('letter-correct')) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  }
+  
   setupMobileInputBlanks() {
     const mobileInput = document.getElementById('mobileInputBlanks');
     if (!mobileInput) return;
@@ -648,21 +760,41 @@ class InputHandler {
     
     mobileInput.addEventListener('input', (e) => {
       const value = e.target.value.toUpperCase();
+      const letterBoxes = document.querySelectorAll('#wordDisplayBlanks .letter-box');
+      const consecutiveGreenCount = this.countConsecutiveGreenLettersBlanks(letterBoxes);
       
       if (value.length > previousValue.length) {
         const newChar = value[value.length - 1];
-        if (/[A-ZÀ-ÿ0-9]/.test(newChar) && this.currentInput.length < this.correctAnswer.length) {
-          const normalizedChar = /[0-9]/.test(newChar) 
-            ? newChar 
-            : this.removeAccents(newChar);
-          this.currentInput += normalizedChar;
-          this.updateBlanksLetterBoxes();
+        if (/[A-ZÀ-ÿ0-9]/.test(newChar)) {
+          // Vérifier qu'on n'a pas de lettre rouge/jaune avant de continuer
+          if (this.currentInput.length > consecutiveGreenCount) {
+            const cursorPos = this.currentInput.length - 1;
+            const currentBox = letterBoxes[cursorPos];
+            if (currentBox && (currentBox.classList.contains('letter-wrong') || currentBox.classList.contains('letter-wrong-place'))) {
+              // Remplacer la dernière lettre fausse
+              this.currentInput = this.currentInput.slice(0, -1);
+            }
+          }
+          
+          if (this.currentInput.length < this.correctAnswer.length) {
+            const normalizedChar = /[0-9]/.test(newChar) 
+              ? newChar 
+              : this.removeAccents(newChar);
+            this.currentInput += normalizedChar;
+            this.updateBlanksLetterBoxes();
+          }
         }
       } else if (value.length < previousValue.length) {
         if (this.currentInput.length > 0) {
-          const letterBoxes = document.querySelectorAll('#wordDisplayBlanks .letter-box');
-          const lastIndex = this.currentInput.length - 1;
-          if (!letterBoxes[lastIndex].classList.contains('letter-correct')) {
+          // Empêcher de supprimer les lettres vertes
+          if (this.currentInput.length <= consecutiveGreenCount) {
+            const feedback = document.getElementById('feedback');
+            if (feedback) {
+              feedback.textContent = '🚫 Tu ne peux pas supprimer les lettres vertes !';
+              feedback.className = 'feedback warning';
+              feedback.classList.remove('hidden');
+            }
+          } else {
             this.currentInput = this.currentInput.slice(0, -1);
             this.updateBlanksLetterBoxes();
           }
@@ -707,6 +839,27 @@ class InputHandler {
     
     if (this.currentInput.length < letterBoxes.length) {
       letterBoxes[this.currentInput.length].classList.add('cursor');
+    }
+    
+    // ✅ Validation automatique si toutes les lettres sont vertes
+    const submitBtn = document.getElementById('submitBlanks');
+    if (this.currentInput.length === this.correctAnswer.length) {
+      const allCorrect = this.currentInput === this.correctAnswer;
+      if (allCorrect) {
+        // Cacher le bouton valider (validation automatique)
+        if (submitBtn) submitBtn.style.display = 'none';
+        
+        // Petit délai pour que l'utilisateur voie la dernière lettre devenir verte
+        setTimeout(() => {
+          this.submitBlanksAnswer();
+        }, 300);
+      } else {
+        // Afficher le bouton si le mot est complet mais incorrect
+        if (submitBtn) submitBtn.style.display = 'block';
+      }
+    } else {
+      // Afficher le bouton si le mot n'est pas complet
+      if (submitBtn) submitBtn.style.display = 'block';
     }
   }
   
