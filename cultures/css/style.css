@@ -659,6 +659,13 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
+.ordre-item.ordre-correct,
+.timeline-event-card.timeline-event-correct {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  border-color: var(--success) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
+
 .drag-handle {
   font-size: 1.5rem;
   color: var(--text-light);
@@ -736,6 +743,13 @@ body {
 .association-item.connected {
   border-color: var(--success);
   opacity: 0.6;
+}
+
+.association-item.association-correct {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  border-color: var(--success) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+  color: var(--text) !important;
 }
 
 .association-lines {

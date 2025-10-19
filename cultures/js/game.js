@@ -213,8 +213,13 @@ class CultureGame {
   // ==========================================
   
   async loadQuestion() {
-    if (this.isLoading) return;
+    if (this.isLoading) {
+      console.log('⏳ Chargement déjà en cours, attente...');
+      return;
+    }
     this.isLoading = true;
+    
+    console.log('🔄 Chargement d\'une nouvelle question...');
     
     // Réinitialiser le compteur d'essais
     this.attemptCount = 0;
@@ -260,10 +265,11 @@ class CultureGame {
       setTimeout(() => {
         this.currentCategory = 'toutes';
         this.updateCategorySelect();
+        this.isLoading = false; // Reset avant de charger la nouvelle question
         this.loadQuestion();
       }, 4000);
       
-      this.isLoading = false;
+      // isLoading reste à true pendant le timeout
       return;
     }
     
@@ -301,12 +307,15 @@ class CultureGame {
     window.currentQuestionDataForUI = questionData;
     
     // Afficher la question
+    console.log('🎨 Affichage de la question dans l\'UI...');
     this.ui.displayQuestion(questionData.question);
     
     // Créer l'interface de réponse
+    console.log('🔧 Création de l\'interface de réponse...');
     this.ui.createAnswerInterface(questionData.type, questionData);
     
     // Attacher les event listeners
+    console.log('🔗 Attachement des event listeners...');
     this.inputHandler.attachListeners(questionData.type, questionData);
     
     // Réactiver le bouton d'aide pour la nouvelle question
@@ -320,6 +329,7 @@ class CultureGame {
     
     this.ui.showFeedback('💭 Réponds à la question !', 'info');
     
+    console.log('✅ Question chargée et prête');
     this.isLoading = false;
   }
   
@@ -340,7 +350,18 @@ class CultureGame {
       this.handleCorrectAnswer();
     } else {
       console.log('❌ INCORRECT');
-      this.handleIncorrectAnswer();
+      
+      // Pour les types "ordre", "timeline" et "association", obtenir les éléments corrects pour feedback visuel
+      const questionData = window.currentQuestionDataForUI;
+      if (questionData && (questionData.type === 'ordre' || questionData.type === 'timeline')) {
+        const correctIndices = this.questionManager.getCorrectOrdreIndices(userAnswer, questionData.answer);
+        this.handleIncorrectAnswer(correctIndices);
+      } else if (questionData && questionData.type === 'association') {
+        const correctPairs = this.questionManager.getCorrectAssociationPairs(userAnswer, questionData.answer);
+        this.handleIncorrectAnswer(correctPairs);
+      } else {
+        this.handleIncorrectAnswer();
+      }
     }
   }
   
@@ -371,7 +392,7 @@ class CultureGame {
     }, 2000);
   }
   
-  handleIncorrectAnswer() {
+  handleIncorrectAnswer(correctIndices = null) {
     // Incrémenter le compteur d'essais
     this.attemptCount++;
     
@@ -395,7 +416,13 @@ class CultureGame {
       
       // Réactiver les inputs pour permettre un nouvel essai
       const questionData = this.questionManager.getCurrentQuestion();
-      this.inputHandler.reactivateInputs(questionData.type);
+      
+      // Pour les types "ordre", "timeline" et "association", passer les éléments corrects
+      if (correctIndices !== null && (questionData.type === 'ordre' || questionData.type === 'timeline' || questionData.type === 'association')) {
+        this.inputHandler.reactivateInputs(questionData.type, correctIndices);
+      } else {
+        this.inputHandler.reactivateInputs(questionData.type);
+      }
     }
   }
   

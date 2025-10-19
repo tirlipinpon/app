@@ -391,6 +391,10 @@ class InputHandler {
     const items = container.querySelectorAll('.ordre-item');
     
     items.forEach(item => {
+      // Réinitialiser les styles de feedback
+      item.classList.remove('ordre-correct');
+      item.style.opacity = '1';
+      item.style.cursor = 'grab';
       item.draggable = true;
       
       const handleDragStart = (e) => {
@@ -459,6 +463,13 @@ class InputHandler {
     const items = container.querySelectorAll('.ordre-item');
     const userOrder = Array.from(items).map(item => parseInt(item.dataset.originalIndex));
     
+    console.log('📤 Ordre soumis:', userOrder);
+    console.log('📋 Items dans le conteneur:', Array.from(items).map((item, idx) => ({
+      position: idx,
+      originalIndex: item.dataset.originalIndex,
+      text: item.querySelector('.ordre-text')?.textContent
+    })));
+    
     this.game.handleAnswer(userOrder);
   }
   
@@ -467,6 +478,13 @@ class InputHandler {
   // ==========================================
   
   setupAssociationType() {
+    // Réinitialiser les styles de feedback
+    document.querySelectorAll('.association-item').forEach(item => {
+      item.classList.remove('association-correct');
+      item.style.opacity = '1';
+      item.style.pointerEvents = 'auto';
+    });
+    
     const leftItems = document.querySelectorAll('.association-left .association-item');
     const rightItems = document.querySelectorAll('.association-right .association-item');
     
@@ -841,8 +859,8 @@ class InputHandler {
   // RÉACTIVATION DES INPUTS (pour réessayer)
   // ==========================================
   
-  reactivateInputs(questionType) {
-    console.log(`🔄 Réactivation des inputs pour type: ${questionType}`);
+  reactivateInputs(questionType, correctIndices = null) {
+    console.log(`🔄 Réactivation des inputs pour type: ${questionType}`, correctIndices ? `avec ${correctIndices.length} indices corrects` : '');
     
     switch (questionType) {
       case 'input':
@@ -902,16 +920,108 @@ class InputHandler {
         break;
       
       case 'ordre':
-        // Les éléments drag&drop sont déjà actifs
-        console.log('✅ Ordre : les éléments restent actifs');
+      case 'timeline':
+        // Marquer visuellement les cartes correctes et bloquer leur déplacement
+        console.log(`🔄 Réactivation ${questionType} avec correctIndices:`, correctIndices);
+        
+        if (correctIndices && correctIndices.length > 0) {
+          // Pour timeline, on travaille avec les slots remplis
+          let items;
+          if (questionType === 'timeline') {
+            // Récupérer les cartes dans l'ordre des slots
+            const dropZones = document.querySelectorAll('.slot-drop-zone');
+            items = Array.from(dropZones).map(zone => zone.querySelector('.timeline-event-card')).filter(card => card !== null);
+            console.log('📦 Nombre de cartes timeline trouvées:', items.length);
+          } else {
+            // Pour ordre, utiliser le conteneur standard
+            const container = document.getElementById('ordreContainer');
+            items = container ? Array.from(container.querySelectorAll('.ordre-item')) : [];
+            console.log('📦 Nombre d\'items ordre trouvés:', items.length);
+          }
+            
+            items.forEach((item, idx) => {
+              const textSelector = questionType === 'timeline' ? '.timeline-event-text' : '.ordre-text';
+              console.log(`  Item ${idx}:`, {
+                isCorrect: correctIndices.includes(idx),
+                text: item.querySelector(textSelector)?.textContent || item.textContent
+              });
+              
+              if (correctIndices.includes(idx)) {
+                // Carte correcte : marquer en vert et bloquer
+                item.classList.add('timeline-event-correct');
+                item.draggable = false;
+                item.style.opacity = '0.7';
+                item.style.cursor = 'not-allowed';
+                console.log(`    ✅ Carte ${idx} marquée comme correcte`);
+              } else {
+                // Carte incorrecte : réinitialiser
+                item.classList.remove('timeline-event-correct');
+                item.draggable = true;
+                item.style.opacity = '1';
+                item.style.cursor = 'grab';
+                console.log(`    ❌ Carte ${idx} reste modifiable`);
+              }
+            });
+          console.log(`✅ ${questionType} : ${correctIndices.length} carte(s) correcte(s) bloquée(s)`);
+        } else {
+          console.log(`⚠️ ${questionType} : aucun indice correct ou array vide`);
+        }
         break;
       
       case 'association':
-        // Réinitialiser les associations
-        this.associationState = {
-          selectedLeft: null,
-          pairs: {}
-        };
+        // Marquer les paires correctes et les bloquer
+        console.log('🔄 Réactivation Association avec correctIndices:', correctIndices);
+        
+        if (correctIndices && typeof correctIndices === 'object' && Object.keys(correctIndices).length > 0) {
+          // correctIndices est un objet {left: right} pour les paires correctes
+          Object.keys(correctIndices).forEach(leftValue => {
+            const rightValue = correctIndices[leftValue];
+            
+            // Trouver les éléments correspondants
+            const leftItem = document.querySelector(`.association-left .association-item[data-value="${leftValue}"]`);
+            const rightItem = document.querySelector(`.association-right .association-item[data-value="${rightValue}"]`);
+            
+            if (leftItem && rightItem) {
+              // Marquer comme correct et bloquer
+              leftItem.classList.add('association-correct');
+              rightItem.classList.add('association-correct');
+              leftItem.style.opacity = '0.7';
+              rightItem.style.opacity = '0.7';
+              leftItem.style.pointerEvents = 'none';
+              rightItem.style.pointerEvents = 'none';
+              
+              // Garder la paire dans l'état
+              this.associationState.pairs[leftValue] = rightValue;
+              
+              console.log(`  ✅ Paire correcte bloquée: ${leftValue} → ${rightValue}`);
+            }
+          });
+          
+          console.log(`✅ Association : ${Object.keys(correctIndices).length} paire(s) correcte(s) bloquée(s)`);
+        } else {
+          // Réinitialiser complètement si aucune paire correcte
+          this.associationState = {
+            selectedLeft: null,
+            pairs: {}
+          };
+          
+          // Réactiver tous les éléments
+          document.querySelectorAll('.association-item').forEach(item => {
+            item.classList.remove('association-correct', 'selected', 'paired');
+            item.style.opacity = '1';
+            item.style.pointerEvents = 'auto';
+          });
+          
+          console.log('⚠️ Association : aucune paire correcte, reset complet');
+        }
+        
+        // Effacer la sélection actuelle
+        this.associationState.selectedLeft = null;
+        document.querySelectorAll('.association-left .association-item').forEach(item => {
+          if (!item.classList.contains('association-correct')) {
+            item.classList.remove('selected');
+          }
+        });
         const svg = document.getElementById('associationSVG');
         if (svg) svg.innerHTML = '';
         
@@ -1086,6 +1196,14 @@ class InputHandler {
     const eventCards = document.querySelectorAll('.timeline-event-card');
     const dropZones = document.querySelectorAll('.slot-drop-zone');
     const submitBtn = document.getElementById('submitTimeline');
+    
+    // Réinitialiser les styles de feedback
+    eventCards.forEach(card => {
+      card.classList.remove('timeline-event-correct');
+      card.style.opacity = '1';
+      card.style.cursor = 'grab';
+      card.draggable = true;
+    });
     
     let draggedElement = null;
     let timelineState = {}; // {slotIndex: eventId}

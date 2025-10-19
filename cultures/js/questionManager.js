@@ -491,6 +491,26 @@ class QuestionManager {
     return userOrder.every((val, idx) => val === correctOrder[idx]);
   }
   
+  // Validation partielle pour l'ordre (retourne les indices corrects)
+  getCorrectOrdreIndices(userOrder, correctOrder) {
+    if (!Array.isArray(userOrder) || !Array.isArray(correctOrder)) return [];
+    if (userOrder.length !== correctOrder.length) return [];
+    
+    const correctIndices = [];
+    userOrder.forEach((val, idx) => {
+      if (val === correctOrder[idx]) {
+        correctIndices.push(idx);
+      }
+    });
+    
+    console.log('🔍 Validation partielle Ordre:');
+    console.log('  📥 Réponse utilisateur:', userOrder);
+    console.log('  ✅ Réponse correcte:', correctOrder);
+    console.log('  🎯 Indices corrects:', correctIndices);
+    
+    return correctIndices;
+  }
+  
   // Validation association
   validateAssociation(userPairs, correctAnswer) {
     if (!userPairs || !correctAnswer || !correctAnswer.pairs) return false;
@@ -512,6 +532,36 @@ class QuestionManager {
     return userKeys.every(key => {
       return userPairs[key] === correctPairsObj[key];
     });
+  }
+  
+  // Validation partielle pour les associations (retourne les paires correctes)
+  getCorrectAssociationPairs(userPairs, correctAnswer) {
+    if (!userPairs || !correctAnswer || !correctAnswer.pairs) return {};
+    
+    // Convertir les pairs correctes en objet
+    const correctPairsObj = {};
+    correctAnswer.pairs.forEach(pair => {
+      if (Array.isArray(pair)) {
+        correctPairsObj[pair[0]] = pair[1];
+      } else if (pair.left && pair.right) {
+        correctPairsObj[pair.left] = pair.right;
+      }
+    });
+    
+    // Identifier les paires correctes
+    const correctUserPairs = {};
+    Object.keys(userPairs).forEach(key => {
+      if (userPairs[key] === correctPairsObj[key]) {
+        correctUserPairs[key] = userPairs[key];
+      }
+    });
+    
+    console.log('🔍 Validation partielle Association:');
+    console.log('  📥 Réponse utilisateur:', userPairs);
+    console.log('  ✅ Réponse correcte:', correctPairsObj);
+    console.log('  🎯 Paires correctes:', correctUserPairs);
+    
+    return correctUserPairs;
   }
   
   // Validation glisser-déposer

@@ -25,7 +25,11 @@ class UIManager {
   displayQuestion(questionText) {
     const questionTextElement = document.getElementById('questionText');
     if (questionTextElement) {
+      console.log('📝 Affichage de la question:', questionText);
       questionTextElement.textContent = questionText;
+      console.log('✅ Question affichée dans le DOM');
+    } else {
+      console.error('❌ Element questionText introuvable !');
     }
   }
   
