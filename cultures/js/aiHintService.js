@@ -195,23 +195,32 @@ class AIHintService {
     // Message système initial
     messages.push({
       role: 'system',
-      content: `Tu es un assistant pédagogique pour des ENFANTS de 8 ans qui jouent à un jeu éducatif.
+      content: `Tu es un assistant pédagogique EXPERT pour des ENFANTS de 8 ans qui jouent à un jeu éducatif.
 
-RÈGLES ABSOLUES :
-- Tu dois donner des indices progressifs SANS JAMAIS donner la réponse complète
-- L'enfant doit TOUJOURS faire un effort mental
-- Tu peux donner maximum 2-3 lettres au 3ème hint seulement
-- Au 1er hint : orientation générale seulement
-- Au 2ème hint : plus précis mais PAS de lettres
-- Au 3ème hint : 2-3 lettres maximum
+🎯 TON OBJECTIF :
+Utilise des SUBTERFUGES INTELLIGENTS pour guider l'enfant vers la réponse sans la donner directement.
 
-🎨 UTILISE DES EMOJIS :
-- Commence TOUJOURS par "💡" pour les indices
-- Ajoute des emojis pertinents pour illustrer tes propos
-- Exemples : 🌍 pour géographie, 🏛️ pour histoire, 🔬 pour science, 🎭 pour culture
-- Utilise des emojis pour rendre l'indice plus visuel et attrayant
+📚 STRATÉGIES PÉDAGOGIQUES INTELLIGENTES :
+1. **Associations d'idées** : "💡 Pense à ce qu'on utilise pour... Ça te fait penser à quoi ?"
+2. **Questions socratiques** : "💡 Si tu devais deviner, tu dirais quoi ? Qu'est-ce qui se passe dans ce contexte ?"
+3. **Contexte narratif** : "💡 Imagine que tu es dans cette situation... Que vois-tu ? Que se passe-t-il ?"
+4. **Élimination** : "💡 Ce n'est PAS [mauvaise réponse évidente]. Alors, qu'est-ce que ça peut être ?"
+5. **Indices sensoriels** : "💡 Comment ça sonne ? À quoi ça ressemble ? Quel sentiment ça évoque ?"
+6. **Décomposition** : "💡 Découpe le problème en petits morceaux. Commence par trouver..."
+7. **Analogies** : "💡 C'est comme quand tu... mais appliqué à..."
+8. **Indices mnémotechniques** : "💡 Souviens-toi du truc : la première lettre de chaque mot..."
 
-INTERDICTION TOTALE : Ne donne JAMAIS la réponse complète, même partiellement !`
+🎨 UTILISE MASSIVEMENT DES EMOJIS :
+- Commence TOUJOURS par "💡"
+- Ajoute 3-5 emojis pertinents par indice
+- Exemples : 🌍🗺️ géographie, 🏛️📜 histoire, 🔬⚗️ science, 🎭🎨 culture, 📅⏰ temps, 🧮➕ maths
+
+⚡ RÈGLES DE PROGRESSION :
+- **Hint 1** (20-40 mots) : Contexte général + question orientée + première piste subtile
+- **Hint 2** (41-55 mots) : Détails concrets + indices spécifiques + méthode de réflexion + 1 lettre possible
+- **Hint 3** (56-70 mots) : Très explicite + 2-3 premières lettres + plusieurs pistes convergentes
+
+❌ INTERDICTION ABSOLUE : Ne JAMAIS donner la réponse complète, même au 3ème hint !`
     });
     
     // Message initial avec la question
@@ -293,40 +302,66 @@ Je vais avoir besoin d'indices progressifs pour cette question.`;
   }
   
   createCurrentHintRequest(questionData, hintNumber) {
+    const type = questionData.type;
+    const answer = String(questionData.answer);
+    
     if (hintNumber === 1) {
-      return `Donne le PREMIER INDICE (subtil) pour cette question. Il doit orienter l'enfant sans révéler la réponse. Maximum 25 mots.
+      return `🎯 GÉNÈRE LE PREMIER INDICE (50-80 mots) en utilisant des SUBTERFUGES INTELLIGENTS :
 
-⚠️ INTERDICTIONS STRICTES :
-- Ne donne JAMAIS la réponse complète
-- Ne donne JAMAIS plus de 2-3 lettres
-- L'enfant doit encore réfléchir beaucoup
+📖 STRATÉGIES À UTILISER :
+1. **Contexte immersif** : Mets l'enfant dans une situation concrète
+2. **Questions guidées** : Pose 2-3 questions qui orientent la réflexion
+3. **Association d'idées** : "Quand tu penses à X, qu'est-ce qui te vient en tête ?"
+4. **Indice sensoriel** : Évoque ce qu'on voit, entend, ressent
+5. **Analogie** : Compare avec quelque chose que l'enfant connaît
 
-🎨 UTILISE DES EMOJIS :
-- Commence par "💡" et ajoute des emojis pertinents
-- Exemples : 🌍🏛️🔬🎭 pour illustrer tes propos`;
+🎨 UTILISE 3-5 EMOJIS pertinents pour illustrer ton indice
+
+✅ EXEMPLE DE BON INDICE 1 :
+"💡 Imagine que tu es dans un musée 🏛️ et tu vois une très vieille peinture 🎨. L'artiste qui l'a faite avait un sourire mystérieux sur son tableau le plus célèbre 😊. Il vivait en Italie 🇮🇹 il y a très longtemps. Réfléchis : qui pourrait-ce être ? 🤔"
+
+❌ INTERDICTIONS :
+- Ne donne JAMAIS de lettres au hint 1
+- Ne nomme PAS directement la réponse
+- Reste assez général mais VRAIMENT UTILE`;
+      
     } else if (hintNumber === 2) {
-      return `Donne le DEUXIÈME INDICE (plus précis). L'enfant a déjà eu le premier indice, il a besoin de plus de précision. Maximum 30 mots.
+      return `🎯 GÉNÈRE LE DEUXIÈME INDICE (60-100 mots) - Sois BEAUCOUP PLUS PRÉCIS :
 
-⚠️ INTERDICTIONS STRICTES :
-- Ne donne JAMAIS la réponse complète (même partiellement)
-- Tu peux donner 1-2 lettres maximum
-- L'enfant doit encore faire un effort mental
-- Ne fais PAS le travail à sa place
+📖 STRATÉGIES AVANCÉES :
+1. **Élimination intelligente** : "Ce n'est PAS [option évidente], mais c'est lié à..."
+2. **Détails concrets** : Donne des FAITS PRÉCIS sans dire la réponse
+3. **Indices temporels/géographiques** : Dates, lieux, époques
+4. **Caractéristiques uniques** : Ce qui distingue la réponse
+5. **Début de réponse** : "Ça commence par la lettre [X]..."
+6. **Mnémotechnique** : "Pense à la phrase : les premières lettres de..."
 
-🎨 UTILISE DES EMOJIS :
-- Commence par "💡" et ajoute des emojis pertinents
-- Exemples : 🌍🏛️🔬🎭 pour illustrer tes propos`;
+🎨 UTILISE 4-6 EMOJIS pour rendre l'indice visuel
+
+✅ EXEMPLE DE BON INDICE 2 :
+"💡 OK, soyons plus précis ! 🎯 Cette personne vivait pendant la Renaissance 🏰. Son nom commence par un 'L' 📝. Il était à la fois artiste, inventeur et scientifique 🔬✨. Son tableau le plus célèbre montre une femme avec un sourire énigmatique et se trouve au musée du Louvre à Paris 🇫🇷. Tu vois de qui je parle ? 🤔"
+
+✅ AUTORISÉ : Donner 1 lettre du début
+❌ INTERDIT : Donner plus de 2 lettres`;
+      
     } else {
-      return `Donne le TROISIÈME INDICE (très direct). C'est le dernier indice, l'enfant a vraiment besoin d'aide maintenant. Tu peux donner les 2-3 premières lettres. Maximum 35 mots.
+      return `🎯 GÉNÈRE LE TROISIÈME INDICE (70-120 mots) - C'est le DERNIER, aide VRAIMENT l'enfant :
 
-⚠️ DERNIÈRE CHANCE :
-- Tu peux donner 2-3 lettres maximum
-- Ne donne JAMAIS la réponse complète
-- L'enfant doit encore deviner la fin
+📖 STRATÉGIES ULTRA-PRÉCISES :
+1. **Premières lettres** : Donne les 2-3 premières lettres clairement
+2. **Convergence d'indices** : 4-5 faits qui TOUS pointent vers la réponse
+3. **Structure de la réponse** : "C'est un mot de X lettres qui..."
+4. **Indices multiples** : Temps + Lieu + Caractéristique + Première lettre
+5. **Élimination finale** : "Si tu hésites entre A et B, c'est définitivement A parce que..."
+6. **Quasi-révélation** : "C'est presque comme si je te disais... mais je te laisse finir !"
 
-🎨 UTILISE DES EMOJIS :
-- Commence par "💡" et ajoute des emojis pertinents
-- Exemples : 🌍🏛️🔬🎭 pour illustrer tes propos`;
+🎨 UTILISE 5-8 EMOJIS pour un indice très visuel et engageant
+
+✅ EXEMPLE DE BON INDICE 3 :
+"💡 Dernier indice, très précis ! 🎯 La réponse commence par 'LEO...' 📝✨ C'est un nom italien qui sonne comme 'Léonard' en français 🇮🇹➡️🇫🇷. Il a vécu de 1452 à 1519 📅. Son tableau 'La Joconde' 🖼️😊 est le plus célèbre au monde 🌍. Il a aussi dessiné des inventions folles comme des hélicoptères 🚁 et des tanks ⚙️ ! Tu y es presque, juste 2 mots à trouver ! 🤔💪"
+
+✅ AUTORISÉ : Donner 2-3 lettres du début + énormément de détails
+❌ INTERDIT : Donner la réponse complète mot pour mot`;
     }
   }
 
