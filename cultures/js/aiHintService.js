@@ -16,7 +16,12 @@ class AIHintService {
   
   async generateHint(questionData, hintNumber = 1) {
     const questionId = questionData.id;
-    const hintKey = `${questionId}_${hintNumber}`;
+    const hintKey = `${questionId}_hint_${hintNumber}`; // ✅ CORRECTION: Ajout de "_hint_"
+    
+    // Debug: État du cache au début
+    console.log(`🔎 État du cache au début de generateHint (hint ${hintNumber} pour ${questionId}):`);
+    console.log(`   - Taille totale du cache: ${this.cache.size}`);
+    console.log(`   - Clés dans le cache:`, Array.from(this.cache.keys()));
     
     // Pour les questions INPUT : 3 hints autorisés
     // Pour les autres types : 2 hints
@@ -40,7 +45,10 @@ class AIHintService {
     // Vérifier si hint existe déjà dans la question (DB) - seulement hint 1
     if (hintNumber === 1 && questionData.hint) {
       console.log(`💾 Hint 1 trouvé dans la DB: ${questionData.hint}`);
+      // ✅ CORRECTION: Mettre en cache pour que les hints suivants le trouvent
+      this.cache.set(hintKey, questionData.hint);
       this.usedHints.add(hintKey);
+      console.log(`💾 Hint 1 de la DB mis en cache avec la clé: "${hintKey}"`);
       return questionData.hint;
     }
     
@@ -69,6 +77,8 @@ class AIHintService {
         // Mettre en cache
         this.cache.set(hintKey, hint);
         this.usedHints.add(hintKey);
+        console.log(`💾 Hint sauvegardé dans le cache avec la clé: "${hintKey}"`);
+        console.log(`📊 Taille du cache après sauvegarde: ${this.cache.size}`);
         
         // Sauvegarder dans Supabase (seulement hint 1)
         if (hintNumber === 1 && this.supabaseService && this.supabaseService.isReady()) {
@@ -211,9 +221,12 @@ INTERDICTION TOTALE : Ne donne JAMAIS la réponse complète, même partiellement
     });
     
     // Ajouter l'historique des hints précédents
+    console.log(`🔍 Recherche des hints précédents pour ${questionId} (hint ${hintNumber})`);
     for (let i = 1; i < hintNumber; i++) {
       const previousHintKey = `${questionId}_hint_${i}`;
       const previousHint = this.cache.get(previousHintKey);
+      
+      console.log(`  📦 Cache ${previousHintKey}:`, previousHint ? `"${previousHint}"` : '❌ Non trouvé');
       
       if (previousHint) {
         // Ajouter le hint précédent comme message assistant
@@ -222,18 +235,11 @@ INTERDICTION TOTALE : Ne donne JAMAIS la réponse complète, même partiellement
           content: previousHint
         });
         
-        // Ajouter un message utilisateur pour le contexte avec la réponse précédente
-        messages.push({
-          role: 'user',
-          content: `L'enfant a besoin d'un indice plus précis maintenant. 
-          
-INDICE PRÉCÉDENT : "${previousHint}"
-
-IMPORTANT : 
-- Ne répète PAS les mêmes informations que l'indice précédent
-- Sois PLUS PRÉCIS mais ne donne JAMAIS la réponse complète
-- L'enfant doit encore réfléchir, ne fais pas le travail à sa place`
-        });
+        // NE PAS ajouter de message utilisateur intermédiaire
+        // L'IA voit juste sa propre réponse précédente dans l'historique
+        console.log(`  ✅ Hint ${i} ajouté à l'historique des messages`);
+      } else {
+        console.warn(`  ⚠️ Hint ${i} manquant dans le cache pour ${questionId}`);
       }
     }
     

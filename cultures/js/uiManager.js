@@ -412,11 +412,21 @@ class UIManager {
         <div class="hint-number">Indice ${hintNumber}/${maxHints}</div>
         <div class="hint-content">
           <div class="hint-text">${hintText}</div>
-          <button class="hint-speak-btn" onclick="speakHint('${hintText.replace(/'/g, "\\'")}')" title="Lire à haute voix">
+          <button class="hint-speak-btn" title="Lire à haute voix">
             🔊
           </button>
         </div>
       `;
+      
+      // Attacher l'event listener au bouton de lecture avec le texte stocké
+      const speakBtn = hintDiv.querySelector('.hint-speak-btn');
+      if (speakBtn) {
+        speakBtn.addEventListener('click', () => {
+          if (window.aiHintService) {
+            window.aiHintService.speakText(hintText);
+          }
+        });
+      }
       
       // Ajouter avec animation
       hintsContainer.appendChild(hintDiv);
@@ -583,9 +593,5 @@ class UIManager {
 // FONCTION GLOBALE POUR LA LECTURE VOCALE
 // ==========================================
 
-// Fonction globale accessible depuis les boutons
-window.speakHint = function(text) {
-  if (window.aiHintService) {
-    window.aiHintService.speakText(text);
-  }
-};
+// Note: Les boutons de lecture vocale utilisent maintenant des event listeners
+// attachés directement dans displayHint(), donc plus besoin de fonction globale

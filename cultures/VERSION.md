@@ -1,5 +1,66 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.1.13 - 19/10/2025 🐛 CORRECTION CRITIQUE - Historique des Hints
+
+### 🚨 Bugs critiques corrigés
+
+#### 1. Format de clé incorrect
+- **Problème** : Clé de sauvegarde `q_science_1_2` vs clé de recherche `q_science_1_hint_2`
+- **Cause** : `hintKey = ${questionId}_${hintNumber}` au lieu de `${questionId}_hint_${hintNumber}`
+- **Impact** : Les hints précédents n'étaient JAMAIS trouvés dans le cache
+- **Solution** : Uniformisation du format de clé avec `_hint_`
+
+#### 2. Hint 1 de la DB non mis en cache
+- **Problème** : Le hint 1 depuis Supabase n'était pas sauvegardé dans le cache
+- **Impact** : Les hints 2 et 3 ne pouvaient pas voir le hint 1 dans l'historique
+- **Solution** : Ajout de `this.cache.set()` quand hint 1 vient de la DB
+
+### ✅ Résultat
+- L'historique des hints fonctionne maintenant CORRECTEMENT
+- L'IA reçoit tous les hints précédents dans le payload
+- Les hints sont progressifs et cohérents
+
+---
+
+## v2.1.12 - 19/10/2025 🔧 Correction Lecture Vocale
+
+### 🐛 Bug critique corrigé
+
+#### Erreur JavaScript avec les apostrophes
+
+- **Problème** : La fonction `speakHint('...')` cassait quand le texte contenait des apostrophes (ex: "l'invention")
+- **Cause** : Utilisation de `onclick` inline avec du texte non échappé correctement
+- **Solution** : Remplacement par des `addEventListener` avec closures JavaScript
+
+#### Nouvelle implémentation
+
+- **Event Listeners** : Attachement dynamique sur chaque bouton 🔊
+- **Closures** : Le texte est capturé dans la closure, pas besoin d'échappement
+- **Support complet** : Fonctionne avec apostrophes, guillemets, emojis, caractères spéciaux
+- **Plus propre** : Séparation HTML/JavaScript
+
+---
+
+## v2.1.11 - 19/10/2025 🔍 Debug Historique des Hints
+
+### 🐛 Debug et amélioration des logs
+
+#### Problème identifié
+
+- **Historique manquant** : Lors du 3ème hint, les hints 1 et 2 n'apparaissaient pas dans le payload envoyé à l'IA
+- **Logs détaillés** : Ajout de logs pour tracer la sauvegarde et récupération des hints du cache
+- **Simplification** : Retrait des messages utilisateur intermédiaires dans l'historique
+
+#### Nouveaux logs de debugging
+
+- 💾 Log de la clé exacte lors de la sauvegarde dans le cache
+- 📊 Log de la taille du cache après chaque sauvegarde
+- 🔍 Log de la recherche des hints précédents
+- 📦 Log du statut de chaque hint (trouvé ✅ ou manquant ❌)
+- ✅ Log quand un hint est ajouté à l'historique des messages
+
+---
+
 ## v2.1.10 - 19/10/2025 🔊 Lecture Vocale Sans Emojis
 
 ### 🔊 Amélioration de la lecture vocale
