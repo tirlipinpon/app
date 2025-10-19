@@ -17,13 +17,14 @@ import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 })
 export class QuestionsComponent implements OnInit {
   questions = signal<Question[]>([]);
+  allQuestions = signal<Question[]>([]); // Liste complète non filtrée pour les compteurs
   categories = signal<Category[]>([]);
   loading = signal(false);
   error = signal('');
   showScrollTop = signal(false);
   
-  selectedCategoryId = signal<number | undefined>(undefined);
-  selectedQuestionType = signal<string>('');
+  selectedCategoryId = signal<number | null>(null);
+  selectedQuestionType = signal<string | null>(null);
   showForm = signal(false);
   editingQuestion = signal<Question | null>(null);
   
@@ -49,6 +50,7 @@ export class QuestionsComponent implements OnInit {
   glisserItems = signal<string[]>(['', '', '', '']);
   glisserMapping = signal<{item: string, category: string}[]>([]);
   remplirBlancsAnswers = signal<string[]>(['']);
+  timelineItems = signal<{text: string, date?: string}[]>([{text: '', date: ''}, {text: '', date: ''}, {text: '', date: ''}]);
   mapImageUrl = signal<string>('');
   mapImageBlob = signal<Blob | null>(null);
   mapImageEvent: any = null; // Pour ngx-image-cropper
@@ -105,14 +107,26 @@ export class QuestionsComponent implements OnInit {
     this.error.set('');
     
     try {
-      let data = await this.dataService.getQuestions(this.selectedCategoryId());
+      // Charger TOUTES les questions pour les compteurs
+      const allData = await this.dataService.getQuestions(undefined);
+      this.allQuestions.set(allData);
       
-      // Filtrer par type si sélectionné (et différent de '')
+      // Appliquer les filtres
+      let data = [...allData];
+      
+      // Filtrer par catégorie si sélectionnée
+      const categoryId = this.selectedCategoryId();
+      if (categoryId !== null && categoryId !== undefined) {
+        data = data.filter(q => q.category_id === categoryId);
+      }
+      
+      // Filtrer par type si sélectionné
       const typeFilter = this.selectedQuestionType();
-      if (typeFilter && typeFilter !== '') {
+      if (typeFilter && typeFilter !== '' && typeFilter !== null) {
         data = data.filter(q => q.question_type === typeFilter);
       }
       
+      console.log('Filtres appliqués:', { categoryId, typeFilter, resultsCount: data.length });
       this.questions.set(data);
     } catch (error: any) {
       this.error.set('Erreur lors du chargement des questions');
@@ -194,6 +208,12 @@ export class QuestionsComponent implements OnInit {
   openEditForm(question: Question) {
     this.editingQuestion.set(question);
     
+    // Réinitialiser les états d'upload d'image
+    this.mapImageBlob.set(null);
+    this.mapImageEvent = null;
+    this.croppedImageBlob = null;
+    this.showCropTool.set(false);
+    
     // Extraire la valeur de answer selon le format
     let answerValue: any = '';
     if (question.answer) {
@@ -257,6 +277,21 @@ export class QuestionsComponent implements OnInit {
         case 'ordre':
           this.ordreItems.set(Array.isArray(opts) ? opts : ['', '', '']);
           break;
+        case 'timeline':
+          if (Array.isArray(opts)) {
+            // opts peut être un array de strings ou d'objets {text, date}
+            const items = opts.map(item => {
+              if (typeof item === 'string') {
+                return { text: item, date: '' };
+              } else {
+                return { text: item.text || '', date: item.date || '' };
+              }
+            });
+            this.timelineItems.set(items);
+          } else {
+            this.timelineItems.set([{text: '', date: ''}, {text: '', date: ''}, {text: '', date: ''}]);
+          }
+          break;
         case 'association':
           // Pour association, les données peuvent être dans options OU answer
           if (opts && opts.left && opts.right) {
@@ -316,6 +351,14 @@ export class QuestionsComponent implements OnInit {
   closeForm() {
     this.showForm.set(false);
     this.editingQuestion.set(null);
+    
+    // Réinitialiser les états d'upload d'image
+    this.mapImageBlob.set(null);
+    this.mapImageEvent = null;
+    this.croppedImageBlob = null;
+    this.showCropTool.set(false);
+    this.mapImageUrl.set('');
+    this.mapZones.set([]);
   }
 
   async onSubmit() {
@@ -365,6 +408,13 @@ export class QuestionsComponent implements OnInit {
         return this.qcmOptions().filter(o => o.trim());
       case 'ordre':
         return this.ordreItems().filter(o => o.trim());
+      case 'timeline':
+        return this.timelineItems()
+          .filter(item => item.text.trim())
+          .map(item => ({
+            text: item.text,
+            ...(item.date ? { date: item.date } : {})
+          }));
       case 'association':
         return {
           left: this.associationLeft().filter(o => o.trim()),
@@ -435,9 +485,30 @@ export class QuestionsComponent implements OnInit {
         return correctZones.map(z => z.id);
       
       case 'ordre':
+        // Pour ordre, answer = l'ordre correct (même que options mais non mélangé)
+        const ordreItems = this.ordreItems().filter(o => o.trim());
+        return ordreItems.length > 0 ? ordreItems : null;
+      
+      case 'timeline':
+        // Pour timeline, answer = array d'objets dans l'ordre chronologique correct
+        const timelineItems = this.timelineItems()
+          .filter(item => item.text.trim())
+          .map(item => ({
+            text: item.text,
+            ...(item.date ? { date: item.date } : {})
+          }));
+        return timelineItems.length > 0 ? timelineItems : null;
+      
       case 'glisser-deposer':
-        // Ces types n'ont pas de answer, juste options
-        return null;
+        // Pour glisser-deposer, answer = le mapping correct
+        const mapping = this.glisserMapping().filter(m => m.item && m.category);
+        if (mapping.length === 0) return null;
+        // Convertir en format attendu par l'app
+        const mappingObj: any = {};
+        mapping.forEach(m => {
+          mappingObj[m.item] = m.category;
+        });
+        return mappingObj;
       
       default:
         return null;
@@ -492,6 +563,19 @@ export class QuestionsComponent implements OnInit {
   }
   removeOrdreItem(index: number) {
     this.ordreItems.set(this.ordreItems().filter((_, i) => i !== index));
+  }
+
+  // Gestion Timeline
+  updateTimelineItem(index: number, field: 'text' | 'date', value: string) {
+    const items = [...this.timelineItems()];
+    items[index][field] = value;
+    this.timelineItems.set(items);
+  }
+  addTimelineItem() {
+    this.timelineItems.set([...this.timelineItems(), { text: '', date: '' }]);
+  }
+  removeTimelineItem(index: number) {
+    this.timelineItems.set(this.timelineItems().filter((_, i) => i !== index));
   }
 
   // Gestion Association
@@ -684,6 +768,37 @@ export class QuestionsComponent implements OnInit {
 
   onMapZonesChange(zones: MapZone[]) {
     this.mapZones.set(zones);
+  }
+
+  // Compteurs pour les filtres (basés sur allQuestions, pas sur questions filtrées)
+  getQuestionCountByType(type: string): number {
+    const categoryId = this.selectedCategoryId();
+    let questions = this.allQuestions();
+    
+    // Si une catégorie est sélectionnée, filtrer d'abord par catégorie
+    if (categoryId !== null && categoryId !== undefined) {
+      questions = questions.filter(q => q.category_id === categoryId);
+    }
+    
+    // Puis compter par type
+    return questions.filter(q => q.question_type === type).length;
+  }
+
+  getQuestionCountByCategory(categoryId: number | undefined | null): number {
+    if (categoryId === undefined || categoryId === null) return 0;
+    return this.allQuestions().filter(q => q.category_id === categoryId).length;
+  }
+
+  getTotalQuestionCount(): number {
+    const categoryId = this.selectedCategoryId();
+    
+    // Si une catégorie est sélectionnée, compter uniquement cette catégorie
+    if (categoryId !== null && categoryId !== undefined) {
+      return this.allQuestions().filter(q => q.category_id === categoryId).length;
+    }
+    
+    // Sinon, compter toutes les questions
+    return this.allQuestions().length;
   }
 }
 

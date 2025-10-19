@@ -109,11 +109,11 @@ export class MapEditorComponent {
   }
 
   getPolygonPoints(zone: MapZone): string {
-    return zone.points.map(p => `${p.x}%,${p.y}%`).join(' ');
+    return zone.points.map(p => `${p.x},${p.y}`).join(' ');
   }
 
   getCurrentZonePoints(): string {
-    return this.currentZone().map(p => `${p.x}%,${p.y}%`).join(' ');
+    return this.currentZone().map(p => `${p.x},${p.y}`).join(' ');
   }
 
   selectZone(zoneId: string) {

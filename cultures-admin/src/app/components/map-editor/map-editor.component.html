@@ -10,7 +10,7 @@
         >
         
         <!-- SVG overlay pour dessiner les zones polygonales -->
-        <svg class="zones-overlay">
+        <svg class="zones-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
           <!-- Zones existantes -->
           @for (zone of zones; track zone.id) {
             <polygon
@@ -29,9 +29,9 @@
             />
             @for (point of currentZone(); track $index) {
               <circle
-                [attr.cx]="point.x + '%'"
-                [attr.cy]="point.y + '%'"
-                r="5"
+                [attr.cx]="point.x"
+                [attr.cy]="point.y"
+                r="1"
                 class="point-marker"
               />
             }

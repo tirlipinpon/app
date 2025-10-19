@@ -7,9 +7,9 @@
         (change)="onCategoryFilterChange()"
         class="category-filter"
       >
-        <option [value]="undefined">Toutes les catégories</option>
+        <option [ngValue]="null">Toutes les catégories ({{ getTotalQuestionCount() }})</option>
         @for (category of categories(); track category.id) {
-          <option [value]="category.id">{{ category.name }}</option>
+          <option [ngValue]="category.id">{{ category.name }} ({{ getQuestionCountByCategory(category.id) }})</option>
         }
       </select>
       
@@ -18,9 +18,9 @@
         (change)="onTypeFilterChange()"
         class="type-filter"
       >
-        <option value="">Tous les types</option>
+        <option [ngValue]="null">Tous les types ({{ getTotalQuestionCount() }})</option>
         @for (type of questionTypes; track type.value) {
-          <option [value]="type.value">{{ type.label }}</option>
+          <option [ngValue]="type.value">{{ type.label }} ({{ getQuestionCountByType(type.value) }})</option>
         }
       </select>
 
@@ -198,6 +198,42 @@
                 </div>
               }
               <button type="button" (click)="addOrdreItem()" class="btn-add">➕ Ajouter un item</button>
+            </div>
+          }
+
+          <!-- Options Timeline (Chronologie) -->
+          @if (formData().question_type === 'timeline') {
+            <div class="options-section">
+              <div class="info-box" style="margin-bottom: 16px;">
+                📅 <strong>Chronologie :</strong> Entre les événements dans l'ordre chronologique correct (du plus ancien au plus récent).
+                La date est optionnelle mais aide à afficher l'information.
+              </div>
+              <label>Événements chronologiques</label>
+              @for (item of timelineItems(); track $index) {
+                <div class="timeline-input">
+                  <span class="order-number">{{ $index + 1 }}.</span>
+                  <div class="timeline-fields">
+                    <input 
+                      type="text" 
+                      [value]="item.text"
+                      (input)="updateTimelineItem($index, 'text', $any($event.target).value)"
+                      placeholder="Ex: Découverte de l'Amérique"
+                      class="timeline-text"
+                    >
+                    <input 
+                      type="text" 
+                      [value]="item.date || ''"
+                      (input)="updateTimelineItem($index, 'date', $any($event.target).value)"
+                      placeholder="Ex: 1492 (optionnel)"
+                      class="timeline-date"
+                    >
+                  </div>
+                  @if (timelineItems().length > 2) {
+                    <button type="button" (click)="removeTimelineItem($index)" class="btn-remove">✖</button>
+                  }
+                </div>
+              }
+              <button type="button" (click)="addTimelineItem()" class="btn-add">➕ Ajouter un événement</button>
             </div>
           }
 

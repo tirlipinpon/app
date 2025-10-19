@@ -644,3 +644,41 @@
   max-height: 600px;
 }
 
+/* Timeline Styles */
+.timeline-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+
+.timeline-fields {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.timeline-text {
+  flex: 2;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.timeline-date {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.timeline-input .order-number {
+  min-width: 30px;
+  text-align: center;
+  font-weight: 600;
+  color: #667eea;
+  padding-top: 10px;
+}
+
