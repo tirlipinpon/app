@@ -1,5 +1,24 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.1.10 - 19/10/2025 🔊 Lecture Vocale Sans Emojis
+
+### 🔊 Amélioration de la lecture vocale
+
+#### Filtrage automatique des emojis
+
+- **Problème résolu** : Les emojis étaient lus lors de la lecture vocale, perturbant l'écoute
+- **Solution** : Nouvelle fonction `removeEmojisFromText()` qui filtre tous les emojis
+- **Regex Unicode complète** : Détecte et retire tous les types d'emojis
+- **Affichage préservé** : Les emojis restent visibles à l'écran pour l'aspect visuel
+- **Logs détaillés** : Console affiche le texte original ET le texte lu
+
+### 📝 Exemple
+
+- **Avant** : 🔊 "💡 Pense au roi qui a construit Versailles 🏰"
+- **Maintenant** : 🔊 "Pense au roi qui a construit Versailles"
+
+---
+
 ## v2.1.9 - 19/10/2025 🔧 Corrections de Syntaxe
 
 ### 🔧 Corrections de bugs critiques

@@ -95,7 +95,10 @@ class AIHintService {
       // Arrêter toute lecture en cours
       window.speechSynthesis.cancel();
       
-      const utterance = new SpeechSynthesisUtterance(text);
+      // Filtrer les emojis pour la lecture vocale
+      const textWithoutEmojis = this.removeEmojisFromText(text);
+      
+      const utterance = new SpeechSynthesisUtterance(textWithoutEmojis);
       
       // Configuration pour les enfants
       utterance.rate = 0.8; // Plus lent pour les enfants
@@ -115,10 +118,20 @@ class AIHintService {
       // Lancer la lecture
       window.speechSynthesis.speak(utterance);
       
-      console.log('🔊 Lecture vocale lancée:', text);
+      console.log('🔊 Lecture vocale lancée (sans emojis):', textWithoutEmojis);
+      console.log('📝 Texte original avec emojis:', text);
     } else {
       console.warn('⚠️ Synthèse vocale non supportée par ce navigateur');
     }
+  }
+  
+  // Fonction pour supprimer les emojis du texte pour la lecture vocale
+  removeEmojisFromText(text) {
+    // Regex pour détecter les emojis (caractères Unicode emoji)
+    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F270}]/gu;
+    
+    // Remplacer les emojis par des espaces et nettoyer les espaces multiples
+    return text.replace(emojiRegex, ' ').replace(/\s+/g, ' ').trim();
   }
   
   stopSpeaking() {
