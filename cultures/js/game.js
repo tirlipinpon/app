@@ -1,9 +1,9 @@
 // ============================================
 // GAME - Orchestrateur principal
 // ============================================
-// Version: 2.1.2
+// Version: 2.1.6
 
-const GAME_VERSION = '2.1.2';
+const GAME_VERSION = '2.1.6';
 
 class CultureGame {
   constructor() {

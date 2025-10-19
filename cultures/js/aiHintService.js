@@ -61,8 +61,9 @@ class AIHintService {
     // Générer avec l'IA
     try {
       console.log(`🤖 Génération du hint ${hintNumber} par IA pour: ${questionId}`);
-      const prompt = this.createPrompt(questionData, hintNumber);
-      const hint = await this.callDeepSeekAPI(prompt);
+      const messages = this.createMessagesArray(questionData, hintNumber);
+      console.log(`📚 Historique des messages (${messages.length} messages):`, messages);
+      const hint = await this.callDeepSeekAPI(messages);
       
       if (hint) {
         // Mettre en cache
@@ -86,7 +87,190 @@ class AIHintService {
   }
   
   // ==========================================
-  // CRÉATION DU PROMPT
+  // HISTORIQUE DES HINTS
+  // ==========================================
+  
+  getHintHistory(questionId, currentHintNumber) {
+    if (currentHintNumber === 1) {
+      return ''; // Pas d'historique pour le premier hint
+    }
+    
+    let historyText = '';
+    const questionKey = questionId.split('_')[0]; // Extraire la partie commune de l'ID
+    
+    // Récupérer les hints précédents depuis le cache
+    for (let i = 1; i < currentHintNumber; i++) {
+      const previousHintKey = `${questionId}_hint_${i}`;
+      const previousHint = this.cache.get(previousHintKey);
+      
+      if (previousHint) {
+        historyText += `💡 INDICE ${i} DÉJÀ DONNÉ : "${previousHint}"\n`;
+      } else if (i === 1 && this.supabaseService && this.supabaseService.isReady()) {
+        // Pour le hint 1, vérifier aussi dans la DB
+        // On pourrait ajouter une méthode pour récupérer le hint depuis la DB
+        historyText += `💡 INDICE ${i} DÉJÀ DONNÉ : (récupéré depuis la base de données)\n`;
+      }
+    }
+    
+    if (historyText) {
+      return `📚 CONTEXTE DES INDICES PRÉCÉDENTS :\n${historyText}\nIMPORTANT : Le nouvel indice doit être PLUS PRÉCIS que les précédents, sans répéter les mêmes informations.\n`;
+    }
+    
+    return '';
+  }
+
+  // ==========================================
+  // CRÉATION DES MESSAGES AVEC HISTORIQUE
+  // ==========================================
+  
+  createMessagesArray(questionData, hintNumber = 1) {
+    const questionId = questionData.id;
+    const messages = [];
+    
+    // Message système initial
+    messages.push({
+      role: 'system',
+      content: 'Tu es un assistant pédagogique pour des ENFANTS de 8 ans qui jouent à un jeu éducatif. 
+
+RÈGLES ABSOLUES :
+- Tu dois donner des indices progressifs SANS JAMAIS donner la réponse complète
+- L\'enfant doit TOUJOURS faire un effort mental
+- Tu peux donner maximum 2-3 lettres au 3ème hint seulement
+- Au 1er hint : orientation générale seulement
+- Au 2ème hint : plus précis mais PAS de lettres
+- Au 3ème hint : 2-3 lettres maximum
+
+🎨 UTILISE DES EMOJIS :
+- Commence TOUJOURS par "💡" pour les indices
+- Ajoute des emojis pertinents pour illustrer tes propos
+- Exemples : 🌍 pour géographie, 🏛️ pour histoire, 🔬 pour science, 🎭 pour culture
+- Utilise des emojis pour rendre l\'indice plus visuel et attrayant
+
+INTERDICTION TOTALE : Ne donne JAMAIS la réponse complète, même partiellement !'
+    });
+    
+    // Message initial avec la question
+    messages.push({
+      role: 'user',
+      content: this.createInitialQuestionMessage(questionData)
+    });
+    
+    // Ajouter l'historique des hints précédents
+    for (let i = 1; i < hintNumber; i++) {
+      const previousHintKey = `${questionId}_hint_${i}`;
+      const previousHint = this.cache.get(previousHintKey);
+      
+      if (previousHint) {
+        // Ajouter le hint précédent comme message assistant
+        messages.push({
+          role: 'assistant',
+          content: previousHint
+        });
+        
+        // Ajouter un message utilisateur pour le contexte avec la réponse précédente
+        messages.push({
+          role: 'user',
+          content: `L'enfant a besoin d'un indice plus précis maintenant. 
+          
+INDICE PRÉCÉDENT : "${previousHint}"
+
+IMPORTANT : 
+- Ne répète PAS les mêmes informations que l'indice précédent
+- Sois PLUS PRÉCIS mais ne donne JAMAIS la réponse complète
+- L'enfant doit encore réfléchir, ne fais pas le travail à sa place`
+        });
+      }
+    }
+    
+    // Message final pour le hint actuel
+    messages.push({
+      role: 'user',
+      content: this.createCurrentHintRequest(questionData, hintNumber)
+    });
+    
+    return messages;
+  }
+  
+  createInitialQuestionMessage(questionData) {
+    const question = questionData.question;
+    const answer = questionData.answer;
+    const type = questionData.type;
+    const category = this.getCategoryName(questionData.category);
+    const options = questionData.options;
+    
+    let typeDescription = '';
+    switch (type) {
+      case 'input': typeDescription = 'une question à réponse libre'; break;
+      case 'qcm': typeDescription = 'un QCM (choix multiple)'; break;
+      case 'vrai-faux': typeDescription = 'une question vrai ou faux'; break;
+      case 'ordre': typeDescription = 'une question d\'ordre chronologique'; break;
+      case 'association': typeDescription = 'une question d\'association'; break;
+      case 'glisser-deposer': typeDescription = 'une question de catégorisation'; break;
+      case 'remplir-blancs': typeDescription = 'une question à trous'; break;
+    }
+    
+    let answerText = '';
+    if (typeof answer === 'object' && !Array.isArray(answer)) {
+      answerText = JSON.stringify(answer);
+    } else if (Array.isArray(answer)) {
+      answerText = answer.join(', ');
+    } else {
+      answerText = String(answer);
+    }
+    
+    let optionsText = '';
+    if (options && type === 'qcm') {
+      optionsText = `\n- Options disponibles : ${options.join(', ')}`;
+    }
+    
+    return `📝 QUESTION : "${question}"${optionsText}
+✅ RÉPONSE CORRECTE : ${answerText}
+🎯 Type : ${typeDescription}
+📚 Catégorie : ${category}
+
+Je vais avoir besoin d'indices progressifs pour cette question.`;
+  }
+  
+  createCurrentHintRequest(questionData, hintNumber) {
+    if (hintNumber === 1) {
+      return `Donne le PREMIER INDICE (subtil) pour cette question. Il doit orienter l'enfant sans révéler la réponse. Maximum 25 mots.
+
+⚠️ INTERDICTIONS STRICTES :
+- Ne donne JAMAIS la réponse complète
+- Ne donne JAMAIS plus de 2-3 lettres
+- L'enfant doit encore réfléchir beaucoup
+
+🎨 UTILISE DES EMOJIS :
+- Commence par "💡" et ajoute des emojis pertinents
+- Exemples : 🌍🏛️🔬🎭 pour illustrer tes propos`;
+    } else if (hintNumber === 2) {
+      return `Donne le DEUXIÈME INDICE (plus précis). L'enfant a déjà eu le premier indice, il a besoin de plus de précision. Maximum 30 mots.
+
+⚠️ INTERDICTIONS STRICTES :
+- Ne donne JAMAIS la réponse complète (même partiellement)
+- Tu peux donner 1-2 lettres maximum
+- L'enfant doit encore faire un effort mental
+- Ne fais PAS le travail à sa place
+
+🎨 UTILISE DES EMOJIS :
+- Commence par "💡" et ajoute des emojis pertinents
+- Exemples : 🌍🏛️🔬🎭 pour illustrer tes propos`;
+    } else {
+      return `Donne le TROISIÈME INDICE (très direct). C'est le dernier indice, l'enfant a vraiment besoin d'aide maintenant. Tu peux donner les 2-3 premières lettres. Maximum 35 mots.
+
+⚠️ DERNIÈRE CHANCE :
+- Tu peux donner 2-3 lettres maximum
+- Ne donne JAMAIS la réponse complète
+- L'enfant doit encore deviner la fin
+
+🎨 UTILISE DES EMOJIS :
+- Commence par "💡" et ajoute des emojis pertinents
+- Exemples : 🌍🏛️🔬🎭 pour illustrer tes propos`;
+    }
+  }
+
+  // ==========================================
+  // CRÉATION DU PROMPT (ANCIENNE MÉTHODE - GARDÉE POUR COMPATIBILITÉ)
   // ==========================================
   
   createPrompt(questionData, hintNumber = 1) {
@@ -95,6 +279,10 @@ class AIHintService {
     const type = questionData.type;
     const category = this.getCategoryName(questionData.category);
     const options = questionData.options;
+    const questionId = questionData.id;
+    
+    // Récupérer l'historique des hints précédents pour cette question
+    const hintHistory = this.getHintHistory(questionId, hintNumber);
     
     let typeDescription = '';
     switch (type) {
@@ -141,7 +329,8 @@ class AIHintService {
     let hintInstruction = '';
     if (hintNumber === 1) {
       hintInstruction = `
-📍 INDICE 1 (SUBTIL) :
+📍 INDICE 1 (SUBTIL - ANALYSE DE BASE) :
+- ANALYSE d'abord la question : quel est le vrai objectif pédagogique ?
 - Donne un indice GÉNÉRAL qui oriente vers la bonne réponse
 - Utilise des ASSOCIATIONS d'idées, des CONTEXTES, ou des CARACTÉRISTIQUES
 - NE mentionne PAS directement la réponse
@@ -149,18 +338,19 @@ class AIHintService {
 - Maximum 25 mots`;
     } else if (hintNumber === 2) {
       hintInstruction = `
-📍 INDICE 2 (PLUS PRÉCIS) :
-- L'enfant a déjà eu un premier indice, il a besoin de PLUS DE PRÉCISION
-- Donne des DÉTAILS CONCRETS qui permettent vraiment de trouver
+📍 INDICE 2 (PRÉCIS - ANALYSE APPROFONDIE) :
+- ANALYSE PLUS PROFONDE : que cherche vraiment cette question ?
+- L'enfant a déjà eu un premier indice, il a besoin de BEAUCOUP PLUS DE PRÉCISION
+- Donne des DÉTAILS CONCRETS qui permettent VRAIMENT de trouver
 - Tu peux mentionner des ÉLÉMENTS CLÉS de la réponse (premières lettres, dates, lieux, etc.)
-- Reste ENCOURAGEANT mais sois PLUS EXPLICITE
+- Reste ENCOURAGEANT mais sois BEAUCOUP PLUS EXPLICITE
 - Maximum 30 mots`;
     } else {
       hintInstruction = `
-📍 INDICE 3 (TRÈS DIRECT) :
-- C'est le DERNIER indice, l'enfant a vraiment besoin d'aide maintenant !
+📍 INDICE 3 (TRÈS DIRECT - ANALYSE COMPLÈTE) :
+- ANALYSE COMPLÈTE : l'enfant a vraiment besoin d'aide maintenant !
 - Sois TRÈS EXPLICITE : donne la première lettre ou les 2-3 premières lettres
-- Mentionne des FAITS PRÉCIS qui mènent directement à la réponse
+- Mentionne des FAITS PRÉCIS qui mènent DIRECTEMENT à la réponse
 - Donne presque la réponse, mais pas complètement
 - Maximum 35 mots`;
     }
@@ -172,33 +362,47 @@ class AIHintService {
 🎯 Type : ${typeDescription}
 📚 Catégorie : ${category}
 
+${hintHistory}
+
 ${hintInstruction}
 
-🎨 STRATÉGIES D'INDICES EFFICACES :
+🎨 STRATÉGIES D'INDICES EFFICACES (ANALYSE REQUISE) :
+
+🧠 MÉTHODE D'ANALYSE OBLIGATOIRE :
+1. ANALYSE la question : quel concept l'enfant doit-il maîtriser ?
+2. ANALYSE la réponse : quels éléments clés permettent de la trouver ?
+3. ANALYSE la progression : comment aider sans donner la réponse ?
 
 Pour un QCM :
-- Indice 1 : "💡 Élimine les réponses impossibles ! Pense au pays où se trouve [élément lié]..."
-- Indice 2 : "💡 La réponse commence par la lettre '${answerText.charAt(0)}' et est connue pour [caractéristique]"
+- Indice 1 : "💡 ANALYSE les options ! Quelle est la logique de cette question ?"
+- Indice 2 : "💡 La réponse est '${answerText.charAt(0)}...' et c'est lié à [contexte précis]"
 
 Pour une question à réponse libre (input) :
-- Indice 1 : "💡 C'est une ville/un pays/une personne célèbre pour [caractéristique générale]"
-- Indice 2 : "💡 C'est lié à [contexte précis]. Pense à [élément important]"
-- Indice 3 : "💡 La réponse commence par '${answerText.substring(0, 2)}' et c'est [caractéristique unique]"
+- Indice 1 : "💡 ANALYSE : c'est [catégorie générale] connu pour [caractéristique]"
+- Indice 2 : "💡 ANALYSE PLUS PROFONDE : c'est lié à [contexte précis] et commence par '${answerText.substring(0, 2)}'"
+- Indice 3 : "💡 ANALYSE COMPLÈTE : c'est '${answerText.substring(0, 3)}...' [caractéristique unique]"
 
 Pour Vrai/Faux :
-- Indice 1 : "💡 Réfléchis bien : est-ce que ça s'est vraiment passé comme ça ?"
-- Indice 2 : "💡 Pense à [élément factuel précis qui permet de trancher]"
+- Indice 1 : "💡 ANALYSE : réfléchis aux faits historiques/scientifiques"
+- Indice 2 : "💡 ANALYSE APPROFONDIE : [élément factuel précis qui permet de trancher]"
 
 Pour ordre chronologique :
-- Indice 1 : "💡 Demande-toi : qu'est-ce qui s'est passé EN PREMIER dans le temps ?"
-- Indice 2 : "💡 Le premier événement est [indice], puis vient [indice sur le 2e]"
+- Indice 1 : "💡 ANALYSE : quel événement vient chronologiquement EN PREMIER ?"
+- Indice 2 : "💡 ANALYSE PRÉCISE : [ordre logique avec éléments clés]"
+
+Pour association :
+- Indice 1 : "💡 ANALYSE les liens logiques entre les éléments !"
+- Indice 2 : "💡 ANALYSE PLUS PRÉCISE : [connexions spécifiques entre les paires]"
 
 RÈGLES ABSOLUES :
 ✅ Commence TOUJOURS par "💡"
+✅ ANALYSE OBLIGATOIRE : comprends d'abord la question avant de répondre
+✅ PROGRESSION LOGIQUE : chaque hint doit être PLUS PERTINENT que le précédent
 ✅ Langage SIMPLE pour un enfant de 8 ans
 ✅ Ton ENCOURAGEANT ("Tu peux y arriver !", "C'est ça !", "Bien réfléchi !")
 ❌ NE DONNE JAMAIS la réponse complète mot pour mot
-✅ Donne des INDICES CONCRETS et UTILES
+✅ Donne des INDICES CONCRETS et VRAIMENT UTILES
+✅ PENSE COMME UN ENSEIGNANT : quel est le meilleur chemin pour faire comprendre ?
 
 TON INDICE (adapté à un enfant de 8 ans) :`;
   }
@@ -207,7 +411,7 @@ TON INDICE (adapté à un enfant de 8 ans) :`;
   // APPEL API DEEPSEEK
   // ==========================================
   
-  async callDeepSeekAPI(prompt, retryCount = 0) {
+  async callDeepSeekAPI(messages, retryCount = 0) {
     try {
       const response = await fetch(CONFIG.DEEPSEEK_API_URL, {
         method: 'POST',
@@ -217,12 +421,7 @@ TON INDICE (adapté à un enfant de 8 ans) :`;
         },
         body: JSON.stringify({
           model: CONFIG.DEEPSEEK_MODEL,
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
+          messages: messages, // Utiliser l'array de messages avec historique
           temperature: CONFIG.AI_HINT_CONFIG.temperature,
           max_tokens: CONFIG.AI_HINT_CONFIG.max_tokens,
           top_p: CONFIG.AI_HINT_CONFIG.top_p

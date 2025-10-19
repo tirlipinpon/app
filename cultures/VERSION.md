@@ -1,5 +1,53 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.1.6 - 19/10/2025 🎨 Hints Visuels avec Emojis
+
+### 🎨 Améliorations IA
+
+#### Système d'emojis pour hints visuels
+
+- **Emojis obligatoires** : L'IA doit commencer TOUJOURS par "💡"
+- **Illustrations visuelles** : Ajout d'emojis pertinents pour illustrer les propos
+- **Exemples par catégorie** : 🌍 géographie, 🏛️ histoire, 🔬 science, 🎭 culture
+
+---
+
+## v2.1.5 - 19/10/2025 🔒 Hints Renforcés
+
+### 🔒 Corrections IA
+
+#### Interdictions strictes renforcées
+
+- **Réponse précédente** : L'IA connaît maintenant ses hints précédents
+- **Interdictions strictes** : Renforcement pour éviter les réponses complètes
+- **Instructions détaillées** : Chaque hint a ses propres règles strictes
+
+---
+
+## v2.1.4 - 19/10/2025 💬 Contexte IA avec Historique des Messages
+
+### 💬 Améliorations IA
+
+#### Système de messages avec historique complet
+
+- **Array de messages** : L'IA reçoit un historique complet de la conversation
+- **Contexte maintenu** : Chaque hint garde le souvenir des hints précédents
+- **Conversation naturelle** : Système de chat avec rôles (system, user, assistant)
+
+---
+
+## v2.1.3 - 19/10/2025 🧠 IA Hints Améliorée
+
+### 🧠 Améliorations IA
+
+#### Système d'analyse des hints renforcé
+
+- **Analyse obligatoire** : L'IA doit d'abord comprendre la question
+- **Progression logique** : Chaque hint PLUS PERTINENT que le précédent
+- **Contexte historique** : L'IA connaît les hints précédents
+
+---
+
 ## v2.1.2 - 19/10/2025 🔀 Shuffle Associations Corrigé
 
 ### 🔧 Corrections de bugs
@@ -260,4 +308,4 @@ Un simple **F5** charge automatiquement la dernière version ! ✅
 
 ---
 
-**Version actuelle : v2.1.2** ✅
+**Version actuelle : v2.1.6** ✅
