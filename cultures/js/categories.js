@@ -8,7 +8,9 @@ const CATEGORIES = [
   { id: 0, key: "toutes", name: "📦 Toutes", icon: "📦" },
   { id: 1, key: "culture", name: "🎭 Culture générale", icon: "🎭" },
   { id: 2, key: "science", name: "🔬 Science", icon: "🔬" },
-  { id: 3, key: "histoire", name: "📜 Histoire", icon: "📜" }
+  { id: 3, key: "histoire", name: "📜 Histoire", icon: "📜" },
+  { id: 4, key: "geographie", name: "🌍 Géographie", icon: "🌍" },
+  { id: 6, key: "nature", name: "🌳 Nature", icon: "🌳" }
 ];
 
 // Correspondance ID → Catégorie
