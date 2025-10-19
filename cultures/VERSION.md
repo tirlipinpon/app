@@ -1,5 +1,50 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.1.1 - 19/10/2025 🔧 Correction Validation Associations
+
+### 🔧 Corrections de bugs
+
+#### Validation des questions d'association corrigée
+
+- **Problème** : Les associations correctes étaient marquées comme fausses
+- **Cause** : La fonction `validateAssociation` ne gérait pas correctement le format `answer.pairs`
+- **Solution** : Conversion des `pairs` en objet pour validation correcte
+
+---
+
+## v2.1.0 - 19/10/2025 🎯 Questions d'Association
+
+### ✨ Nouveautés principales
+
+#### 🎯 40 Questions d'association ajoutées
+
+- **10 questions Culture générale** : Fruits/couleurs, animaux/jeunes, métiers/outils, sports/équipements, etc.
+- **10 questions Sciences** : Animaux/habitats, planètes/couleurs, organes/fonctions, saisons/températures, etc.
+- **10 questions Histoire** : Civilisations/continents, rois/pays, inventions/inventeurs, monuments/villes, etc.
+- **10 questions Géographie** : Capitales/pays, fleuves/pays, villes belges/régions, océans/caractéristiques, etc.
+
+#### 🌍 Nouvelle catégorie Géographie
+
+- Ajout de la catégorie "🌍 Géographie" dans l'interface
+- Questions adaptées pour un enfant de 8 ans en Belgique
+- Contenu spécifique belge (villes, régions, fleuves)
+
+#### 🔧 Support complet des questions d'association
+
+- Correction de `questionManager.js` pour gérer le format `answer.left/right/pairs`
+- Correction de `uiManager.js` pour afficher l'interface d'association
+- Validation des réponses d'association fonctionnelle
+- Amélioration de l'espacement des colonnes (gap: 4rem)
+- Alignement parfait en mobile (centrage des éléments)
+
+### 📊 Statistiques v2.1.0
+
+- **Total questions** : 130 (90 originales + 40 nouvelles)
+- **Total catégories** : 5 (4 originales + Géographie)
+- **Types de questions** : 7 (input, qcm, vrai-faux, ordre, association, glisser-deposer, remplir-blancs)
+
+---
+
 ## v2.0.0 - 19/10/2025 🎮 Mise à jour MAJEURE
 
 ### ✨ Nouveautés principales
@@ -203,4 +248,4 @@ Un simple **F5** charge automatiquement la dernière version ! ✅
 
 ---
 
-**Version actuelle : v2.0.0** ✅
+**Version actuelle : v2.1.1** ✅

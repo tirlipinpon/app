@@ -221,7 +221,9 @@ class UIManager {
   // ==========================================
   
   createAssociationInterface(questionData) {
-    const options = questionData.options || { left: [], right: [] };
+    // Pour les questions d'association, les données sont dans answer, pas dans options
+    const answerData = questionData.answer || { left: [], right: [] };
+    const options = { left: answerData.left || [], right: answerData.right || [] };
     const answerContainer = document.getElementById('answerContainer');
     
     const html = `

@@ -81,9 +81,21 @@ class QuestionManager {
     }
     
     // Récupérer la réponse depuis Supabase (champ answer)
-    if (!questionData.answer || questionData.answer.value === undefined || questionData.answer.value === null) {
-      console.error(`❌ Pas de réponse trouvée pour: ${questionId}`);
-      return null;
+    // Pour les questions d'association, la réponse est directement dans answer
+    // Pour les autres types, elle est dans answer.value
+    let answerData = null;
+    if (questionData.question_type === 'association') {
+      if (!questionData.answer || !questionData.answer.left || !questionData.answer.right) {
+        console.error(`❌ Pas de réponse d'association trouvée pour: ${questionId}`);
+        return null;
+      }
+      answerData = questionData.answer;
+    } else {
+      if (!questionData.answer || questionData.answer.value === undefined || questionData.answer.value === null) {
+        console.error(`❌ Pas de réponse trouvée pour: ${questionId}`);
+        return null;
+      }
+      answerData = questionData.answer;
     }
     
     // Créer l'objet question complet avec copie des options (important pour shuffle)
@@ -94,8 +106,8 @@ class QuestionManager {
       category: questionData.category_id,
       tags: questionData.tags || [],
       hint: questionData.hint,
-      answer: questionData.answer.value,
-      validateFlexible: questionData.answer.validateFlexible || false,
+      answer: questionData.question_type === 'association' ? answerData : answerData.value,
+      validateFlexible: questionData.question_type === 'association' ? false : (answerData.validateFlexible || false),
       // Copier les options pour permettre un nouveau shuffle à chaque fois
       originalOptions: questionData.options ? JSON.parse(JSON.stringify(questionData.options)) : null
     };
@@ -198,13 +210,14 @@ class QuestionManager {
   // SHUFFLE ASSOCIATION
   // ==========================================
   shuffleAssociation(question) {
-    if (!question.originalOptions) {
+    // Pour les questions d'association, les données sont dans answer
+    if (!question.answer || !question.answer.left || !question.answer.right) {
       question.options = { left: [], right: [] };
       return;
     }
     
-    const leftItems = [...(question.originalOptions.left || [])];
-    const rightItems = [...(question.originalOptions.right || [])];
+    const leftItems = [...(question.answer.left || [])];
+    const rightItems = [...(question.answer.right || [])];
     
     console.log(`📋 Association originale - Left: ${leftItems.join(', ')}`);
     console.log(`📋 Association originale - Right: ${rightItems.join(', ')}`);
@@ -268,10 +281,18 @@ class QuestionManager {
     if (!question) return false;
     
     // Récupérer la réponse depuis Supabase
-    if (!question.answer || question.answer.value === undefined || question.answer.value === null) return false;
+    // Pour les questions d'association, la réponse est directement dans answer
+    let correctAnswer, validateFlexible;
+    if (question.question_type === 'association') {
+      if (!question.answer || !question.answer.pairs) return false;
+      correctAnswer = question.answer;
+      validateFlexible = false;
+    } else {
+      if (!question.answer || question.answer.value === undefined || question.answer.value === null) return false;
+      correctAnswer = question.answer.value;
+      validateFlexible = question.answer.validateFlexible || false;
+    }
     
-    const correctAnswer = question.answer.value;
-    const validateFlexible = question.answer.validateFlexible || false;
     const questionType = question.question_type;
     
     switch (questionType) {
@@ -355,14 +376,20 @@ class QuestionManager {
   }
   
   // Validation association
-  validateAssociation(userPairs, correctPairs) {
-    if (!userPairs || !correctPairs) return false;
+  validateAssociation(userPairs, correctAnswer) {
+    if (!userPairs || !correctAnswer || !correctAnswer.pairs) return false;
     
-    const correctKeys = Object.keys(correctPairs);
+    // Convertir les pairs correctes en objet pour faciliter la comparaison
+    const correctPairsObj = {};
+    correctAnswer.pairs.forEach(pair => {
+      correctPairsObj[pair[0]] = pair[1];
+    });
+    
+    const userKeys = Object.keys(userPairs);
     
     // Vérifier que toutes les associations sont correctes
-    return correctKeys.every(key => {
-      return userPairs[key] === correctPairs[key];
+    return userKeys.every(key => {
+      return userPairs[key] === correctPairsObj[key];
     });
   }
   
