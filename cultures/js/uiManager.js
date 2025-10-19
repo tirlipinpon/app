@@ -410,7 +410,12 @@ class UIManager {
       hintDiv.className = 'hint-display';
       hintDiv.innerHTML = `
         <div class="hint-number">Indice ${hintNumber}/${maxHints}</div>
-        <div class="hint-text">${hintText}</div>
+        <div class="hint-content">
+          <div class="hint-text">${hintText}</div>
+          <button class="hint-speak-btn" onclick="speakHint('${hintText.replace(/'/g, "\\'")}')" title="Lire à haute voix">
+            🔊
+          </button>
+        </div>
       `;
       
       // Ajouter avec animation
@@ -574,3 +579,13 @@ class UIManager {
   }
 }
 
+// ==========================================
+// FONCTION GLOBALE POUR LA LECTURE VOCALE
+// ==========================================
+
+// Fonction globale accessible depuis les boutons
+window.speakHint = function(text) {
+  if (window.aiHintService) {
+    window.aiHintService.speakText(text);
+  }
+};

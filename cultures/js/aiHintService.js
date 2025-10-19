@@ -87,6 +87,48 @@ class AIHintService {
   }
   
   // ==========================================
+  // SYNTHÈSE VOCALE
+  // ==========================================
+  
+  speakText(text) {
+    if ('speechSynthesis' in window) {
+      // Arrêter toute lecture en cours
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Configuration pour les enfants
+      utterance.rate = 0.8; // Plus lent pour les enfants
+      utterance.pitch = 1.2; // Plus aigu et amical
+      utterance.volume = 0.8;
+      
+      // Essayer d'utiliser une voix française
+      const voices = window.speechSynthesis.getVoices();
+      const frenchVoice = voices.find(voice => 
+        voice.lang.includes('fr') || voice.lang.includes('FR')
+      );
+      
+      if (frenchVoice) {
+        utterance.voice = frenchVoice;
+      }
+      
+      // Lancer la lecture
+      window.speechSynthesis.speak(utterance);
+      
+      console.log('🔊 Lecture vocale lancée:', text);
+    } else {
+      console.warn('⚠️ Synthèse vocale non supportée par ce navigateur');
+    }
+  }
+  
+  stopSpeaking() {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      console.log('🔇 Lecture vocale arrêtée');
+    }
+  }
+
+  // ==========================================
   // HISTORIQUE DES HINTS
   // ==========================================
   
@@ -130,11 +172,11 @@ class AIHintService {
     // Message système initial
     messages.push({
       role: 'system',
-      content: 'Tu es un assistant pédagogique pour des ENFANTS de 8 ans qui jouent à un jeu éducatif. 
+      content: `Tu es un assistant pédagogique pour des ENFANTS de 8 ans qui jouent à un jeu éducatif.
 
 RÈGLES ABSOLUES :
 - Tu dois donner des indices progressifs SANS JAMAIS donner la réponse complète
-- L\'enfant doit TOUJOURS faire un effort mental
+- L'enfant doit TOUJOURS faire un effort mental
 - Tu peux donner maximum 2-3 lettres au 3ème hint seulement
 - Au 1er hint : orientation générale seulement
 - Au 2ème hint : plus précis mais PAS de lettres
@@ -144,9 +186,9 @@ RÈGLES ABSOLUES :
 - Commence TOUJOURS par "💡" pour les indices
 - Ajoute des emojis pertinents pour illustrer tes propos
 - Exemples : 🌍 pour géographie, 🏛️ pour histoire, 🔬 pour science, 🎭 pour culture
-- Utilise des emojis pour rendre l\'indice plus visuel et attrayant
+- Utilise des emojis pour rendre l'indice plus visuel et attrayant
 
-INTERDICTION TOTALE : Ne donne JAMAIS la réponse complète, même partiellement !'
+INTERDICTION TOTALE : Ne donne JAMAIS la réponse complète, même partiellement !`
     });
     
     // Message initial avec la question

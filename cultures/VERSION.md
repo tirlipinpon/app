@@ -1,5 +1,42 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.1.9 - 19/10/2025 🔧 Corrections de Syntaxe
+
+### 🔧 Corrections de bugs critiques
+
+#### Erreurs de syntaxe corrigées
+
+- **Erreur ligne 175** : Problème avec les guillemets dans le message système de l'IA
+- **Erreur ligne 468** : Fonction globale définie à l'intérieur de la classe
+- **AIFintService non défini** : Erreur de référence corrigée
+
+---
+
+## v2.1.8 - 19/10/2025 🔧 Correction Bouton d'Aide
+
+### 🔧 Corrections de bugs
+
+#### Gestion du bouton d'aide améliorée
+
+- **Problème résolu** : Le bouton "Besoin d'aide ?" restait actif après avoir terminé une question
+- **Symptôme** : Les hints apparaissaient sur la question suivante pendant le chargement
+- **Solution** : Désactivation automatique du bouton après réponse correcte
+
+---
+
+## v2.1.7 - 19/10/2025 🔊 Lecture Vocale des Hints
+
+### 🔊 Nouvelles fonctionnalités
+
+#### Lecture vocale des hints
+
+- **Boutons 🔊** : Chaque hint a maintenant un bouton de lecture vocale
+- **Synthèse vocale** : Utilise l'API Web Speech du navigateur
+- **Configuration enfant** : Voix plus lente (0.8x) et plus aigüe (1.2x pitch)
+- **Accessibilité** : Aide les enfants qui ont du mal à lire
+
+---
+
 ## v2.1.6 - 19/10/2025 🎨 Hints Visuels avec Emojis
 
 ### 🎨 Améliorations IA
@@ -308,4 +345,4 @@ Un simple **F5** charge automatiquement la dernière version ! ✅
 
 ---
 
-**Version actuelle : v2.1.6** ✅
+**Version actuelle : v2.1.9** ✅

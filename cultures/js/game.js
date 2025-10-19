@@ -1,9 +1,9 @@
 // ============================================
 // GAME - Orchestrateur principal
 // ============================================
-// Version: 2.1.6
+// Version: 2.1.9
 
-const GAME_VERSION = '2.1.6';
+const GAME_VERSION = '2.1.9';
 
 class CultureGame {
   constructor() {
@@ -18,6 +18,9 @@ class CultureGame {
     this.questionManager = new QuestionManager();
     this.incorrectTracker = new IncorrectTracker(this.userManager);
     this.aiHintService = new AIHintService(this.supabaseService);
+    
+    // Rendre le service accessible globalement pour la lecture vocale
+    window.aiHintService = this.aiHintService;
     this.soundManager = new SoundManager();
     this.ui = new UIManager();
     this.inputHandler = new InputHandler(this);
@@ -157,6 +160,30 @@ class CultureGame {
   }
   
   // ==========================================
+  // GESTION DU BOUTON D'AIDE
+  // ==========================================
+  
+  disableHintButton() {
+    const hintBtn = document.getElementById('hintBtn');
+    if (hintBtn) {
+      hintBtn.disabled = true;
+      hintBtn.style.opacity = '0.5';
+      hintBtn.style.cursor = 'not-allowed';
+      hintBtn.innerHTML = '💡 Question terminée';
+    }
+  }
+  
+  enableHintButton() {
+    const hintBtn = document.getElementById('hintBtn');
+    if (hintBtn) {
+      hintBtn.disabled = false;
+      hintBtn.style.opacity = '1';
+      hintBtn.style.cursor = 'pointer';
+      hintBtn.innerHTML = '💡 Besoin d\'aide ?';
+    }
+  }
+
+  // ==========================================
   // GESTION DES QUESTIONS
   // ==========================================
   
@@ -239,6 +266,9 @@ class CultureGame {
     // Attacher les event listeners
     this.inputHandler.attachListeners(questionData.type, questionData);
     
+    // Réactiver le bouton d'aide pour la nouvelle question
+    this.enableHintButton();
+    
     // Attacher le listener pour le bouton hint
     const hintBtn = document.getElementById('hintBtn');
     if (hintBtn) {
@@ -282,6 +312,9 @@ class CultureGame {
       ? '✅ Correct ! Bravo !' 
       : '✅ Correct ! Bravo ! (Connecte-toi pour sauvegarder ta progression)';
     this.ui.showFeedback(message, 'success');
+    
+    // Désactiver le bouton d'aide après réponse correcte
+    this.disableHintButton();
     
     // Son
     this.soundManager.play('correct');
@@ -332,6 +365,9 @@ class CultureGame {
     
     // Afficher la bonne réponse
     this.ui.showFeedback(`❌ La bonne réponse était : ${correctAnswer}`, 'error');
+    
+    // Désactiver le bouton d'aide après affichage de la réponse
+    this.disableHintButton();
     
     // Ajouter aux incorrectes (seulement si connecté)
     if (this.userManager.isLoggedIn()) {
