@@ -5,17 +5,20 @@
 ### 🚨 Bugs critiques corrigés
 
 #### 1. Format de clé incorrect
+
 - **Problème** : Clé de sauvegarde `q_science_1_2` vs clé de recherche `q_science_1_hint_2`
 - **Cause** : `hintKey = ${questionId}_${hintNumber}` au lieu de `${questionId}_hint_${hintNumber}`
 - **Impact** : Les hints précédents n'étaient JAMAIS trouvés dans le cache
 - **Solution** : Uniformisation du format de clé avec `_hint_`
 
 #### 2. Hint 1 de la DB non mis en cache
+
 - **Problème** : Le hint 1 depuis Supabase n'était pas sauvegardé dans le cache
 - **Impact** : Les hints 2 et 3 ne pouvaient pas voir le hint 1 dans l'historique
 - **Solution** : Ajout de `this.cache.set()` quand hint 1 vient de la DB
 
 ### ✅ Résultat
+
 - L'historique des hints fonctionne maintenant CORRECTEMENT
 - L'IA reçoit tous les hints précédents dans le payload
 - Les hints sont progressifs et cohérents
