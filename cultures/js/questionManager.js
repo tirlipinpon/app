@@ -81,21 +81,37 @@ class QuestionManager {
     }
     
     // Récupérer la réponse depuis Supabase (champ answer)
-    // Pour les questions d'association, la réponse est directement dans answer
-    // Pour les autres types, elle est dans answer.value
+    // Différents formats selon le type de question :
+    // - association : answer = {left, right, pairs}
+    // - timeline, map-click : answer = valeur directe (array ou string)
+    // - autres : answer = {value, validateFlexible}
+    
     let answerData = null;
+    let finalAnswer = null;
+    
     if (questionData.question_type === 'association') {
+      // Association : answer contient left, right, pairs
       if (!questionData.answer || !questionData.answer.left || !questionData.answer.right) {
         console.error(`❌ Pas de réponse d'association trouvée pour: ${questionId}`);
         return null;
       }
       answerData = questionData.answer;
+      finalAnswer = answerData;
+    } else if (questionData.question_type === 'timeline' || questionData.question_type === 'map-click') {
+      // Timeline et Map-click : answer est directement la valeur (array ou string)
+      if (!questionData.answer) {
+        console.error(`❌ Pas de réponse trouvée pour: ${questionId}`);
+        return null;
+      }
+      finalAnswer = questionData.answer;
     } else {
+      // Autres types : answer contient {value, validateFlexible}
       if (!questionData.answer || questionData.answer.value === undefined || questionData.answer.value === null) {
         console.error(`❌ Pas de réponse trouvée pour: ${questionId}`);
         return null;
       }
       answerData = questionData.answer;
+      finalAnswer = answerData.value;
     }
     
     // Créer l'objet question complet avec copie des options (important pour shuffle)
@@ -106,8 +122,8 @@ class QuestionManager {
       category: questionData.category_id,
       tags: questionData.tags || [],
       hint: questionData.hint,
-      answer: questionData.question_type === 'association' ? answerData : answerData.value,
-      validateFlexible: questionData.question_type === 'association' ? false : (answerData.validateFlexible || false),
+      answer: finalAnswer,
+      validateFlexible: (answerData && answerData.validateFlexible) || false,
       // Copier les options pour permettre un nouveau shuffle à chaque fois
       originalOptions: questionData.options ? JSON.parse(JSON.stringify(questionData.options)) : null
     };
@@ -137,6 +153,15 @@ class QuestionManager {
       
       case 'glisser-deposer':
         this.shuffleGlisserDeposer(question);
+        break;
+      
+      case 'timeline':
+        this.shuffleTimeline(question);
+        break;
+      
+      case 'map-click':
+        // Pas de shuffle pour map-click, les zones sont fixes
+        question.options = question.originalOptions;
         break;
       
       default:
@@ -262,6 +287,23 @@ class QuestionManager {
   }
   
   // ==========================================
+  // SHUFFLE TIMELINE
+  // ==========================================
+  shuffleTimeline(question) {
+    if (!question.originalOptions || !Array.isArray(question.originalOptions)) {
+      question.options = [];
+      return;
+    }
+    
+    // Copier et mélanger les événements
+    const events = [...question.originalOptions];
+    this.shuffleArray(events);
+    
+    question.options = events;
+    console.log(`🔀 Timeline events shuffled:`, events.map(e => e.text).join(' → '));
+  }
+  
+  // ==========================================
   // ALGORITHME SHUFFLE (Fisher-Yates)
   // ==========================================
   shuffleArray(array) {
@@ -318,9 +360,39 @@ class QuestionManager {
       case 'remplir-blancs':
         return this.validateInput(userAnswer, correctAnswer, true);
       
+      case 'map-click':
+        return this.validateMapClick(userAnswer, correctAnswer);
+      
+      case 'timeline':
+        return this.validateTimeline(userAnswer, correctAnswer);
+      
       default:
         return false;
     }
+  }
+  
+  // ==========================================
+  // VALIDATION: MAP-CLICK
+  // ==========================================
+  
+  validateMapClick(userAnswer, correctAnswer) {
+    // userAnswer = l'ID de la zone cliquée
+    // correctAnswer = l'ID de la zone correcte
+    return userAnswer === correctAnswer;
+  }
+  
+  // ==========================================
+  // VALIDATION: TIMELINE
+  // ==========================================
+  
+  validateTimeline(userAnswer, correctAnswer) {
+    // userAnswer = array des event IDs dans l'ordre placé
+    // correctAnswer = array des event IDs dans le bon ordre
+    if (!Array.isArray(userAnswer) || !Array.isArray(correctAnswer)) return false;
+    if (userAnswer.length !== correctAnswer.length) return false;
+    
+    // Comparer chaque élément
+    return userAnswer.every((eventId, index) => eventId === correctAnswer[index]);
   }
   
   // Normaliser les chaînes (minuscules, trim, SANS accents)

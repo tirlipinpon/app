@@ -1,5 +1,71 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.2.1 - 19/10/2025 🔧 Correction Timeline & Map-Click
+
+### 🐛 Correction
+
+- **Problème** : Questions timeline/map-click ne se chargeaient pas ("Pas de réponse trouvée")
+- **Cause** : Format d'answer différent (valeur directe vs {value})
+- **Solution** : Gestion de 3 formats d'answer dans `prepareQuestion()`
+- **Ajout** : Fonction `shuffleTimeline()` pour mélanger les événements
+
+---
+
+## v2.2.0 - 19/10/2025 🎉 NOUVEAUX TYPES DE QUESTIONS
+
+### 🚀 Nouvelles fonctionnalités majeures
+
+#### Type MAP-CLICK 🗺️
+
+- **Carte interactive cliquable** : L'enfant clique sur une carte pour localiser
+- **Marqueur animé** : 📍 avec animation bounce
+- **Validation automatique** : Après 0.5 seconde
+- **Exemples** : "Clique sur la Belgique", "Où est Paris ?"
+
+#### Type TIMELINE 📅
+
+- **Ligne du temps visuelle** : Drag & drop d'événements sur une timeline
+- **Numérotation** : Slots numérotés (1, 2, 3, 4...)
+- **Design moderne** : Ligne avec dégradé, cartes avec emojis
+- **Exemples** : Cycle du papillon, saisons, moments de la journée
+
+#### Design et UX
+
+- Interfaces visuelles et intuitives
+- Responsive design (desktop et mobile)
+- Animations et feedback immédiat
+- Styles cohérents avec le reste de l'application
+
+#### Questions d'exemple
+
+- 5 questions TIMELINE (sciences et nature)
+- 5 questions MAP-CLICK (géographie)
+- Script SQL fourni : `database/timeline_mapclick_examples.sql`
+
+---
+
+## v2.1.17 - 19/10/2025 🗑️ Suppression Boutons Valider
+
+### Nettoyage
+
+- Suppression complète des boutons "Valider" pour INPUT et REMPLIR-BLANCS
+- Validation 100% automatique quand le mot est correct
+- Interface plus épurée
+
+---
+
+## v2.1.16 - 19/10/2025 🎯 Masquage Bouton Valider
+
+### 🔧 Amélioration UX
+
+#### Bouton "Valider" intelligent
+
+- **Caché** quand toutes les lettres sont vertes (validation automatique)
+- **Visible** quand mot incomplet ou incorrect
+- Réduit la confusion pour l'utilisateur
+
+---
+
 ## v2.1.15 - 19/10/2025 🎯 Amélioration Input Letter-Box
 
 ### 🎮 Expérience utilisateur améliorée

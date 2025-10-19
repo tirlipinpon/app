@@ -67,6 +67,14 @@ class InputHandler {
       case 'remplir-blancs':
         this.setupRemplirBlancsType(questionData);
         break;
+      
+      case 'map-click':
+        this.setupMapClickType(questionData);
+        break;
+      
+      case 'timeline':
+        this.setupTimelineType(questionData);
+        break;
     }
   }
   
@@ -91,18 +99,6 @@ class InputHandler {
     
     // Setup mobile input
     this.setupMobileInputAnswer();
-    
-    // Setup bouton submit
-    const submitBtn = document.getElementById('submitBtn');
-    if (submitBtn) {
-      const handleClick = () => this.submitInputAnswer();
-      submitBtn.addEventListener('click', handleClick);
-      this.currentInteractions.push({ 
-        element: submitBtn, 
-        event: 'click', 
-        handler: handleClick 
-      });
-    }
     
     // Click sur word display pour focus mobile
     const wordDisplay = document.getElementById('wordDisplayAnswer');
@@ -319,24 +315,14 @@ class InputHandler {
     }
     
     // ✅ Validation automatique si toutes les lettres sont vertes
-    const submitBtn = document.getElementById('submitBtn');
     if (this.currentInput.length === this.correctAnswer.length) {
       const allCorrect = this.currentInput === this.correctAnswer;
       if (allCorrect) {
-        // Cacher le bouton valider (validation automatique)
-        if (submitBtn) submitBtn.style.display = 'none';
-        
         // Petit délai pour que l'utilisateur voie la dernière lettre devenir verte
         setTimeout(() => {
           this.submitInputAnswer();
         }, 300);
-      } else {
-        // Afficher le bouton si le mot est complet mais incorrect
-        if (submitBtn) submitBtn.style.display = 'block';
       }
-    } else {
-      // Afficher le bouton si le mot n'est pas complet
-      if (submitBtn) submitBtn.style.display = 'block';
     }
   }
   
@@ -649,18 +635,6 @@ class InputHandler {
     // Setup mobile input
     this.setupMobileInputBlanks();
     
-    // Setup bouton submit
-    const submitBtn = document.getElementById('submitBlanks');
-    if (submitBtn) {
-      const handleClick = () => this.submitBlanksAnswer();
-      submitBtn.addEventListener('click', handleClick);
-      this.currentInteractions.push({ 
-        element: submitBtn, 
-        event: 'click', 
-        handler: handleClick 
-      });
-    }
-    
     // Click sur word display pour focus mobile
     const wordDisplay = document.getElementById('wordDisplayBlanks');
     if (wordDisplay) {
@@ -842,24 +816,14 @@ class InputHandler {
     }
     
     // ✅ Validation automatique si toutes les lettres sont vertes
-    const submitBtn = document.getElementById('submitBlanks');
     if (this.currentInput.length === this.correctAnswer.length) {
       const allCorrect = this.currentInput === this.correctAnswer;
       if (allCorrect) {
-        // Cacher le bouton valider (validation automatique)
-        if (submitBtn) submitBtn.style.display = 'none';
-        
         // Petit délai pour que l'utilisateur voie la dernière lettre devenir verte
         setTimeout(() => {
           this.submitBlanksAnswer();
         }, 300);
-      } else {
-        // Afficher le bouton si le mot est complet mais incorrect
-        if (submitBtn) submitBtn.style.display = 'block';
       }
-    } else {
-      // Afficher le bouton si le mot n'est pas complet
-      if (submitBtn) submitBtn.style.display = 'block';
     }
   }
   
@@ -962,8 +926,201 @@ class InputHandler {
         console.log('✅ Glisser-déposer : réinitialisation nécessaire');
         break;
       
+      case 'map-click':
+        // Retirer le marqueur
+        const marker = document.getElementById('mapMarker');
+        if (marker) {
+          marker.classList.add('hidden');
+          marker.dataset.clickedZone = '';
+        }
+        break;
+      
+      case 'timeline':
+        // Remettre toutes les cartes dans le pool
+        const timelineCards = document.querySelectorAll('.timeline-event-card');
+        const timelinePool = document.getElementById('timelinePool');
+        if (timelinePool) {
+          timelineCards.forEach(card => {
+            timelinePool.appendChild(card);
+          });
+        }
+        // Nettoyer les drop zones
+        const timelineDropZones = document.querySelectorAll('.slot-drop-zone');
+        timelineDropZones.forEach(zone => {
+          zone.classList.remove('filled');
+          zone.textContent = 'Glisse ici';
+        });
+        break;
+      
       default:
         console.warn('⚠️ Type de question non géré pour réactivation:', questionType);
+    }
+  }
+  
+  // ==========================================
+  // TYPE: MAP-CLICK (Carte interactive)
+  // ==========================================
+  
+  setupMapClickType(questionData) {
+    const mapImage = document.getElementById('mapImage');
+    const mapOverlay = document.getElementById('mapOverlay');
+    const mapMarker = document.getElementById('mapMarker');
+    const mapWrapper = document.querySelector('.map-wrapper');
+    
+    if (!mapImage || !mapOverlay || !mapMarker || !mapWrapper) return;
+    
+    // Définir les zones cliquables depuis questionData
+    const mapData = questionData.options || {};
+    const zones = mapData.zones || [];
+    
+    // Gérer le clic sur la carte
+    const handleMapClick = (e) => {
+      const rect = mapImage.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100; // Position en %
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      
+      // Placer le marqueur
+      mapMarker.style.left = `${x}%`;
+      mapMarker.style.top = `${y}%`;
+      mapMarker.classList.remove('hidden');
+      
+      // Vérifier quelle zone a été cliquée
+      let clickedZone = null;
+      for (const zone of zones) {
+        const coords = zone.coords;
+        if (x >= coords.x && x <= coords.x + coords.width &&
+            y >= coords.y && y <= coords.y + coords.height) {
+          clickedZone = zone.id;
+          break;
+        }
+      }
+      
+      // Stocker la zone cliquée
+      mapMarker.dataset.clickedZone = clickedZone || '';
+      
+      // Validation automatique après 0.5s
+      setTimeout(() => {
+        const answer = mapMarker.dataset.clickedZone || 'unknown';
+        this.game.handleAnswer(answer);
+      }, 500);
+    };
+    
+    mapWrapper.addEventListener('click', handleMapClick);
+    this.currentInteractions.push({ 
+      element: mapWrapper, 
+      event: 'click', 
+      handler: handleMapClick 
+    });
+  }
+  
+  // ==========================================
+  // TYPE: TIMELINE (Ligne du temps)
+  // ==========================================
+  
+  setupTimelineType(questionData) {
+    const eventCards = document.querySelectorAll('.timeline-event-card');
+    const dropZones = document.querySelectorAll('.slot-drop-zone');
+    const submitBtn = document.getElementById('submitTimeline');
+    
+    let draggedElement = null;
+    let timelineState = {}; // {slotIndex: eventId}
+    
+    // Drag start sur les cartes
+    eventCards.forEach(card => {
+      const handleDragStart = (e) => {
+        draggedElement = card;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      };
+      
+      const handleDragEnd = (e) => {
+        card.classList.remove('dragging');
+      };
+      
+      card.addEventListener('dragstart', handleDragStart);
+      card.addEventListener('dragend', handleDragEnd);
+      
+      this.currentInteractions.push(
+        { element: card, event: 'dragstart', handler: handleDragStart },
+        { element: card, event: 'dragend', handler: handleDragEnd }
+      );
+    });
+    
+    // Drop zones
+    dropZones.forEach(zone => {
+      const handleDragOver = (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+      };
+      
+      const handleDragLeave = (e) => {
+        zone.classList.remove('drag-over');
+      };
+      
+      const handleDrop = (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        
+        if (draggedElement) {
+          const slotIndex = zone.dataset.slotIndex;
+          const eventId = draggedElement.dataset.eventId;
+          
+          // Retirer la carte de son emplacement précédent
+          const existingCard = zone.querySelector('.timeline-event-card');
+          if (existingCard) {
+            // Remettre dans le pool
+            document.getElementById('timelinePool').appendChild(existingCard);
+            delete timelineState[slotIndex];
+          }
+          
+          // Placer la nouvelle carte
+          zone.appendChild(draggedElement);
+          zone.classList.add('filled');
+          zone.textContent = ''; // Retirer le texte "Glisse ici"
+          zone.appendChild(draggedElement);
+          
+          // Enregistrer dans l'état
+          timelineState[slotIndex] = eventId;
+          
+          // Vérifier si toutes les slots sont remplies
+          if (Object.keys(timelineState).length === dropZones.length) {
+            // Activer le bouton valider
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        }
+      };
+      
+      zone.addEventListener('dragover', handleDragOver);
+      zone.addEventListener('dragleave', handleDragLeave);
+      zone.addEventListener('drop', handleDrop);
+      
+      this.currentInteractions.push(
+        { element: zone, event: 'dragover', handler: handleDragOver },
+        { element: zone, event: 'dragleave', handler: handleDragLeave },
+        { element: zone, event: 'drop', handler: handleDrop }
+      );
+    });
+    
+    // Bouton submit
+    if (submitBtn) {
+      const handleSubmit = () => {
+        // Construire le tableau des événements dans l'ordre
+        const orderedEvents = [];
+        for (let i = 0; i < dropZones.length; i++) {
+          if (timelineState[i]) {
+            orderedEvents.push(timelineState[i]);
+          }
+        }
+        
+        this.game.handleAnswer(orderedEvents);
+      };
+      
+      submitBtn.addEventListener('click', handleSubmit);
+      this.currentInteractions.push({ 
+        element: submitBtn, 
+        event: 'click', 
+        handler: handleSubmit 
+      });
     }
   }
   

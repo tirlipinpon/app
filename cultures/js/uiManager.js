@@ -72,6 +72,14 @@ class UIManager {
       case 'remplir-blancs':
         this.createRemplirBlancsInterface(questionData);
         break;
+      
+      case 'map-click':
+        this.createMapClickInterface(questionData);
+        break;
+      
+      case 'timeline':
+        this.createTimelineInterface(questionData);
+        break;
     }
     
     // Ajouter le bouton hint
@@ -115,10 +123,6 @@ class UIManager {
         <div class="word-display-answer" id="wordDisplayAnswer">
           ${letterBoxesHtml}
         </div>
-        
-        <button id="submitBtn" class="submit-btn">
-          ✓ Valider
-        </button>
       </div>
     `;
     
@@ -375,7 +379,89 @@ class UIManager {
     });
     
     html += '</div>';
-    html += '<button id="submitBlanks" class="submit-btn">✓ Valider</button>';
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  // ==========================================
+  // INTERFACE: MAP-CLICK (Carte interactive)
+  // ==========================================
+  
+  createMapClickInterface(questionData) {
+    const answerContainer = document.getElementById('answerContainer');
+    if (!answerContainer) return;
+    
+    // questionData.options devrait contenir :
+    // { mapImage: "url", zones: [{id, name, coords: {x, y, width, height}}] }
+    const mapData = questionData.options || {};
+    const mapImage = mapData.mapImage || '';
+    const zones = mapData.zones || [];
+    
+    let html = `
+      <div class="map-click-container">
+        <div class="map-wrapper">
+          <img src="${mapImage}" alt="Carte interactive" class="map-image" id="mapImage">
+          <svg class="map-overlay" id="mapOverlay">
+            <!-- Les zones cliquables seront dessinées ici -->
+          </svg>
+          <div class="map-click-marker hidden" id="mapMarker">📍</div>
+        </div>
+        <div class="map-instruction">
+          👆 Clique sur la carte pour répondre
+        </div>
+      </div>
+    `;
+    
+    answerContainer.innerHTML = html;
+  }
+  
+  // ==========================================
+  // INTERFACE: TIMELINE (Ligne du temps visuelle)
+  // ==========================================
+  
+  createTimelineInterface(questionData) {
+    const answerContainer = document.getElementById('answerContainer');
+    if (!answerContainer) return;
+    
+    // questionData.options devrait contenir les événements mélangés
+    const events = questionData.options || [];
+    
+    let html = `
+      <div class="timeline-container">
+        <div class="timeline-instruction">
+          📅 Glisse les événements sur la ligne du temps dans le bon ordre
+        </div>
+        
+        <!-- Pool d'événements à placer -->
+        <div class="timeline-pool" id="timelinePool">
+          ${events.map((event, index) => `
+            <div class="timeline-event-card" draggable="true" data-event-id="${event.id || index}">
+              <div class="event-emoji">${event.emoji || '📌'}</div>
+              <div class="event-text">${this.escapeHtml(event.text)}</div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <!-- Ligne du temps avec slots -->
+        <div class="timeline-line-wrapper">
+          <div class="timeline-line">
+            <div class="timeline-arrow">→</div>
+          </div>
+          <div class="timeline-slots" id="timelineSlots">
+            ${events.map((_, index) => `
+              <div class="timeline-slot" data-position="${index}">
+                <div class="slot-number">${index + 1}</div>
+                <div class="slot-drop-zone" data-slot-index="${index}">
+                  Glisse ici
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <button id="submitTimeline" class="submit-btn">✓ Valider l'ordre</button>
+      </div>
+    `;
     
     answerContainer.innerHTML = html;
   }
