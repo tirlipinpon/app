@@ -388,11 +388,31 @@ class QuestionManager {
   validateTimeline(userAnswer, correctAnswer) {
     // userAnswer = array des event IDs dans l'ordre placé
     // correctAnswer = array des event IDs dans le bon ordre
-    if (!Array.isArray(userAnswer) || !Array.isArray(correctAnswer)) return false;
-    if (userAnswer.length !== correctAnswer.length) return false;
+    console.log('🔍 Validation Timeline:');
+    console.log('   User answer:', userAnswer);
+    console.log('   Correct answer:', correctAnswer);
+    
+    if (!Array.isArray(userAnswer) || !Array.isArray(correctAnswer)) {
+      console.log('   ❌ Un des deux n\'est pas un array');
+      return false;
+    }
+    
+    if (userAnswer.length !== correctAnswer.length) {
+      console.log('   ❌ Longueurs différentes');
+      return false;
+    }
     
     // Comparer chaque élément
-    return userAnswer.every((eventId, index) => eventId === correctAnswer[index]);
+    const isCorrect = userAnswer.every((eventId, index) => {
+      const match = eventId === correctAnswer[index];
+      if (!match) {
+        console.log(`   ❌ Position ${index}: "${eventId}" !== "${correctAnswer[index]}"`);
+      }
+      return match;
+    });
+    
+    console.log(`   Résultat: ${isCorrect ? '✅ CORRECT' : '❌ INCORRECT'}`);
+    return isCorrect;
   }
   
   // Normaliser les chaînes (minuscules, trim, SANS accents)
