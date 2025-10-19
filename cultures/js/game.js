@@ -274,8 +274,10 @@ class CultureGame {
     }
     
     // Préparer la question (avec shuffle)
+    console.log(`⏱️ Début de prepareQuestion pour ${result.questionId}`);
     this.currentQuestionId = result.questionId;
     const questionData = this.questionManager.prepareQuestion(this.currentQuestionId);
+    console.log(`⏱️ Fin de prepareQuestion - Résultat:`, questionData ? '✅ OK' : '❌ NULL');
     
     if (!questionData) {
       console.error(`❌ Question invalide ou incomplète: ${this.currentQuestionId} - Passage à la suivante`);
@@ -286,11 +288,9 @@ class CultureGame {
         this.incorrectTracker.markAsCorrect(this.currentQuestionId);
       }
       
-      // Charger automatiquement la question suivante après un court délai
-      setTimeout(() => {
-        this.isLoading = false;
-        this.loadQuestion();
-      }, 1500);
+      // Charger automatiquement la question suivante IMMÉDIATEMENT (pas de délai)
+      this.isLoading = false;
+      this.loadQuestion();
       return;
     }
     
@@ -307,16 +307,19 @@ class CultureGame {
     window.currentQuestionDataForUI = questionData;
     
     // Afficher la question
-    console.log('🎨 Affichage de la question dans l\'UI...');
+    console.time('⏱️ displayQuestion');
     this.ui.displayQuestion(questionData.question);
+    console.timeEnd('⏱️ displayQuestion');
     
     // Créer l'interface de réponse
-    console.log('🔧 Création de l\'interface de réponse...');
+    console.time('⏱️ createAnswerInterface');
     this.ui.createAnswerInterface(questionData.type, questionData);
+    console.timeEnd('⏱️ createAnswerInterface');
     
     // Attacher les event listeners
-    console.log('🔗 Attachement des event listeners...');
+    console.time('⏱️ attachListeners');
     this.inputHandler.attachListeners(questionData.type, questionData);
+    console.timeEnd('⏱️ attachListeners');
     
     // Réactiver le bouton d'aide pour la nouvelle question
     this.enableHintButton();

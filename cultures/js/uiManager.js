@@ -38,6 +38,7 @@ class UIManager {
   // ==========================================
   
   createAnswerInterface(questionType, questionData) {
+    console.time('⏱️ createAnswerInterface');
     const answerContainer = document.getElementById('answerContainer');
     const hintContainer = document.getElementById('hintContainer');
     
@@ -46,6 +47,8 @@ class UIManager {
     // Nettoyer le contenu précédent
     answerContainer.innerHTML = '';
     if (hintContainer) hintContainer.innerHTML = '';
+    
+    console.log(`🎨 Création de l'interface pour type: ${questionType}`);
     
     // Créer l'interface selon le type
     switch (questionType) {
@@ -88,6 +91,8 @@ class UIManager {
     
     // Ajouter le bouton hint
     this.createHintButton();
+    
+    console.timeEnd('⏱️ createAnswerInterface');
   }
   
   // ==========================================
@@ -542,9 +547,12 @@ class UIManager {
     const hintsContainer = document.getElementById('hintsContainer');
     
     if (hintsContainer) {
+      console.log(`📌 Ajout du hint ${hintNumber} au conteneur (nombre actuel de hints: ${hintsContainer.children.length})`);
+      
       // Créer un nouveau div pour ce hint
       const hintDiv = document.createElement('div');
       hintDiv.className = 'hint-display';
+      hintDiv.setAttribute('data-hint-number', hintNumber);
       hintDiv.innerHTML = `
         <div class="hint-number">Indice ${hintNumber}/${maxHints}</div>
         <div class="hint-content">
@@ -565,13 +573,17 @@ class UIManager {
         });
       }
       
-      // Ajouter avec animation
-      hintsContainer.appendChild(hintDiv);
+      // Ajouter au DÉBUT du conteneur (prepend) pour que le hint le plus récent soit en haut
+      hintsContainer.insertBefore(hintDiv, hintsContainer.firstChild);
+      
+      console.log(`✅ Hint ${hintNumber} ajouté (nouveau total: ${hintsContainer.children.length} hints affichés)`);
       
       // Animer l'apparition
       setTimeout(() => {
         hintDiv.classList.add('visible');
       }, 10);
+    } else {
+      console.error('❌ hintsContainer introuvable !');
     }
   }
   

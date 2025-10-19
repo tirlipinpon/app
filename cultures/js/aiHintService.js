@@ -137,11 +137,23 @@ class AIHintService {
   
   // Fonction pour supprimer les emojis du texte pour la lecture vocale
   removeEmojisFromText(text) {
-    // Regex pour détecter les emojis (caractères Unicode emoji)
-    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F270}]/gu;
+    // Regex COMPLÈTE pour tous les emojis Unicode (y compris ⏳ sablier, etc.)
+    const emojiRegex = /[\u{1F000}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]|[\u{2B00}-\u{2BFF}]|[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]|[\u{1F018}-\u{1F270}]|[\u{238C}-\u{2454}]|[\u{20D0}-\u{20FF}]|[\u{E0020}-\u{E007F}]/gu;
     
-    // Remplacer les emojis par des espaces et nettoyer les espaces multiples
-    return text.replace(emojiRegex, ' ').replace(/\s+/g, ' ').trim();
+    // Supprimer aussi les caractères de variation (variation selectors)
+    const variationSelectors = /[\uFE00-\uFE0F]/gu;
+    
+    // Remplacer les emojis et variation selectors par des espaces
+    let cleaned = text.replace(emojiRegex, ' ').replace(variationSelectors, ' ');
+    
+    // Nettoyer les espaces multiples et trim
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    console.log('🔇 Texte nettoyé pour lecture vocale:');
+    console.log('  Avant:', text.substring(0, 100) + '...');
+    console.log('  Après:', cleaned.substring(0, 100) + '...');
+    
+    return cleaned;
   }
   
   stopSpeaking() {
@@ -216,9 +228,9 @@ Utilise des SUBTERFUGES INTELLIGENTS pour guider l'enfant vers la réponse sans 
 - Exemples : 🌍🗺️ géographie, 🏛️📜 histoire, 🔬⚗️ science, 🎭🎨 culture, 📅⏰ temps, 🧮➕ maths
 
 ⚡ RÈGLES DE PROGRESSION :
-- **Hint 1** (20-40 mots) : Contexte général + question orientée + première piste subtile
-- **Hint 2** (41-55 mots) : Détails concrets + indices spécifiques + méthode de réflexion + 1 lettre possible
-- **Hint 3** (56-70 mots) : Très explicite + 2-3 premières lettres + plusieurs pistes convergentes
+- **Hint 1** (max 20 mots) : question orientée + première piste subtile
+- **Hint 2** (max 30 mots) : indices spécifiques + méthode de réflexion + 1 lettre possible
+- **Hint 3** (max 40 mots) : 2-3 premières lettres + plusieurs pistes convergentes
 
 ❌ INTERDICTION ABSOLUE : Ne JAMAIS donner la réponse complète, même au 3ème hint !`
     });

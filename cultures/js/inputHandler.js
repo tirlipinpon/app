@@ -34,6 +34,9 @@ class InputHandler {
   // ==========================================
   
   attachListeners(questionType, questionData) {
+    console.log(`🔗 attachListeners appelé pour type: ${questionType}`);
+    console.time('⏱️ inputHandler.attachListeners');
+    
     this.reset();
     
     // Stocker les données de la question pour validation
@@ -76,6 +79,9 @@ class InputHandler {
         this.setupTimelineType(questionData);
         break;
     }
+    
+    console.timeEnd('⏱️ inputHandler.attachListeners');
+    console.log(`✅ attachListeners terminé pour type: ${questionType}`);
   }
   
   // ==========================================
