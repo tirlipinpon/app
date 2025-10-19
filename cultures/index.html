@@ -34,6 +34,9 @@
       
       <div class="header-actions">
         <button id="soundBtn" class="icon-btn" title="Sons">🔊</button>
+        <div class="user-info hidden" id="userInfo">
+          <span>👤 <strong id="currentUser"></strong></span>
+        </div>
         <button id="logoutBtn" class="btn btn-secondary hidden">Déconnexion</button>
       </div>
     </div>
@@ -59,9 +62,6 @@
           <button id="loginBtn" class="btn btn-secondary">
             Se connecter
           </button>
-          <div class="user-info hidden" id="userInfo">
-            <span>👤 <strong id="currentUser"></strong></span>
-          </div>
         </div>
       </div>
       
@@ -87,11 +87,6 @@
         <!-- Conteneur de réponse (dynamique selon le type) -->
         <div id="answerContainer" class="answer-container">
           <!-- Le contenu sera injecté dynamiquement -->
-        </div>
-        
-        <!-- Feedback -->
-        <div id="feedback" class="feedback hidden">
-          Réponse en attente...
         </div>
         
         <!-- Hint -->

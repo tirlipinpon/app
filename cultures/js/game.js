@@ -665,6 +665,7 @@ class CultureGame {
     // Mise à jour de l'affichage selon l'état de connexion
     const isLoggedIn = this.userManager.isLoggedIn();
     const logoutBtn = document.getElementById('logoutBtn');
+    const loginInline = document.querySelector('.login-inline');
     
     if (isLoggedIn) {
       document.getElementById('usernameInput').classList.add('hidden');
@@ -672,11 +673,13 @@ class CultureGame {
       document.getElementById('loginBtn').classList.add('hidden');
       document.getElementById('userInfo').classList.remove('hidden');
       if (logoutBtn) logoutBtn.classList.remove('hidden');
+      if (loginInline) loginInline.classList.add('hidden'); // Cacher tout le bloc login
     } else {
       document.getElementById('usernameInput').classList.remove('hidden');
       document.getElementById('loginBtn').classList.remove('hidden');
       document.getElementById('userInfo').classList.add('hidden');
       if (logoutBtn) logoutBtn.classList.add('hidden');
+      if (loginInline) loginInline.classList.remove('hidden'); // Afficher le bloc login
       this.populateUserSelect();
     }
   }

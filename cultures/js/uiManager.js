@@ -483,10 +483,6 @@ class UIManager {
     
     let html = `
       <div class="timeline-container">
-        <div class="timeline-instruction">
-          📅 Glisse les événements sur la ligne du temps dans le bon ordre
-        </div>
-        
         <!-- Pool d'événements à placer -->
         <div class="timeline-pool" id="timelinePool">
           ${events.map((event, index) => `
@@ -616,8 +612,13 @@ class UIManager {
   // ==========================================
   
   showFeedback(message, type = 'info') {
-    const feedback = document.getElementById('feedback');
-    if (!feedback) return;
+    // Créer ou récupérer l'élément feedback
+    let feedback = document.getElementById('feedback');
+    if (!feedback) {
+      feedback = document.createElement('div');
+      feedback.id = 'feedback';
+      document.body.appendChild(feedback);
+    }
     
     feedback.textContent = message;
     feedback.className = `feedback feedback-${type}`;
