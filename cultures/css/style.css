@@ -1239,22 +1239,30 @@ body {
   }
   
   .association-container {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
-    padding: 0 var(--spacing-sm);
+    grid-template-columns: 1fr auto 1fr; /* Garder 3 colonnes sur mobile */
+    gap: var(--spacing-sm);
+    padding: 0 var(--spacing-xs);
   }
   
   .association-column {
     min-width: auto;
     padding: 0 !important;
-    align-items: center !important;
+    gap: var(--spacing-xs);
   }
   
-  .association-left,
+  .association-left {
+    align-items: flex-end;
+    padding-right: var(--spacing-xs) !important;
+  }
+  
   .association-right {
-    justify-content: center;
-    align-items: center;
-    padding: 0 !important;
+    align-items: flex-start;
+    padding-left: var(--spacing-xs) !important;
+  }
+  
+  .association-item {
+    font-size: 0.875rem; /* Texte un peu plus petit sur mobile */
+    padding: var(--spacing-xs);
   }
   
   .association-lines {
