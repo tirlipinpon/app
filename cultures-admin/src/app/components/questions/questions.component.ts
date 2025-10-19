@@ -17,9 +17,10 @@ export class QuestionsComponent implements OnInit {
   categories = signal<Category[]>([]);
   loading = signal(false);
   error = signal('');
+  showScrollTop = signal(false);
   
   selectedCategoryId = signal<number | undefined>(undefined);
-  selectedQuestionType = signal<string | undefined>(undefined);
+  selectedQuestionType = signal<string>('');
   showForm = signal(false);
   editingQuestion = signal<Question | null>(null);
   
@@ -43,6 +44,8 @@ export class QuestionsComponent implements OnInit {
   associationPairs = signal<{left: string, right: string}[]>([]);
   glisserCategories = signal<string[]>(['', '']);
   glisserItems = signal<string[]>(['', '', '', '']);
+  glisserMapping = signal<{item: string, category: string}[]>([]);
+  remplirBlancsAnswers = signal<string[]>(['']);
 
   questionTypes = [
     { value: 'input', label: 'Texte libre' },
@@ -59,6 +62,17 @@ export class QuestionsComponent implements OnInit {
   async ngOnInit() {
     await this.loadCategories();
     await this.loadQuestions();
+    this.setupScrollListener();
+  }
+
+  setupScrollListener() {
+    window.addEventListener('scroll', () => {
+      this.showScrollTop.set(window.scrollY > 300);
+    });
+  }
+
+  scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async loadCategories() {
@@ -77,9 +91,10 @@ export class QuestionsComponent implements OnInit {
     try {
       let data = await this.dataService.getQuestions(this.selectedCategoryId());
       
-      // Filtrer par type si sélectionné
-      if (this.selectedQuestionType()) {
-        data = data.filter(q => q.question_type === this.selectedQuestionType());
+      // Filtrer par type si sélectionné (et différent de '')
+      const typeFilter = this.selectedQuestionType();
+      if (typeFilter && typeFilter !== '') {
+        data = data.filter(q => q.question_type === typeFilter);
       }
       
       this.questions.set(data);
@@ -104,6 +119,45 @@ export class QuestionsComponent implements OnInit {
     return category?.name || 'Inconnue';
   }
 
+  formatOptionsPreview(options: any, type: string): string {
+    if (!options) return 'N/A';
+    
+    try {
+      switch(type) {
+        case 'qcm':
+        case 'ordre':
+          // Array simple
+          return Array.isArray(options) ? options.join(', ') : JSON.stringify(options);
+        
+        case 'timeline':
+          // Array d'objets avec text
+          if (Array.isArray(options)) {
+            return options.map(o => o.text || o).join(' → ');
+          }
+          return JSON.stringify(options);
+        
+        case 'association':
+          // {left: [...], right: [...]}
+          if (options.left && options.right) {
+            return `Gauche: ${options.left.join(', ')} | Droite: ${options.right.join(', ')}`;
+          }
+          return JSON.stringify(options);
+        
+        case 'glisser-deposer':
+          // {categories: [...], items: [...]}
+          if (options.categories && options.items) {
+            return `Catégories: ${options.categories.join(', ')} | Items: ${options.items.join(', ')}`;
+          }
+          return JSON.stringify(options);
+        
+        default:
+          return JSON.stringify(options);
+      }
+    } catch (e) {
+      return String(options);
+    }
+  }
+
   openCreateForm() {
     this.editingQuestion.set(null);
     const randomId = 'q_' + Date.now();
@@ -125,14 +179,25 @@ export class QuestionsComponent implements OnInit {
     this.editingQuestion.set(question);
     
     // Extraire la valeur de answer selon le format
-    let answerValue = '';
+    let answerValue: any = '';
     if (question.answer) {
       if (question.question_type === 'vrai-faux') {
         // answer = {"value": true} ou {"value": false}
-        answerValue = question.answer.value ? 'Vrai' : 'Faux';
-      } else if (question.answer.value !== undefined) {
+        answerValue = question.answer.value === true ? 'Vrai' : 'Faux';
+      } else if (question.question_type === 'remplir-blancs' && question.answer.value) {
+        // answer = {"value": "texte"} ou {"value": ["texte1", "texte2"]}
+        if (Array.isArray(question.answer.value)) {
+          this.remplirBlancsAnswers.set(question.answer.value);
+          answerValue = question.answer.value[0] || '';
+        } else {
+          this.remplirBlancsAnswers.set([String(question.answer.value)]);
+          answerValue = String(question.answer.value);
+        }
+      } else if (question.answer.value !== undefined && question.answer.value !== null) {
         // answer = {"value": "texte"}
-        answerValue = question.answer.value;
+        answerValue = String(question.answer.value);
+      } else {
+        answerValue = '';
       }
     }
     
@@ -149,7 +214,12 @@ export class QuestionsComponent implements OnInit {
     });
 
     // Charger les options selon le type
-    this.loadOptionsForType(question.question_type, question.options || question.answer);
+    if (question.question_type === 'association' && question.answer) {
+      // Pour association, charger depuis answer (pas options)
+      this.loadOptionsForType(question.question_type, question.answer);
+    } else {
+      this.loadOptionsForType(question.question_type, question.options);
+    }
     
     this.showForm.set(true);
   }
@@ -181,9 +251,18 @@ export class QuestionsComponent implements OnInit {
           if (opts && opts.categories && opts.items) {
             this.glisserCategories.set(opts.categories);
             this.glisserItems.set(opts.items);
+            // Créer mapping si pas présent (pour rétro-compatibilité)
+            if (opts.mapping) {
+              this.glisserMapping.set(opts.mapping);
+            } else {
+              // Auto-générer un mapping vide pour chaque item
+              const mapping = opts.items.map((item: string) => ({ item, category: '' }));
+              this.glisserMapping.set(mapping);
+            }
           } else {
             this.glisserCategories.set(['', '']);
             this.glisserItems.set(['', '', '', '']);
+            this.glisserMapping.set([]);
           }
           break;
       }
@@ -196,6 +275,7 @@ export class QuestionsComponent implements OnInit {
       this.associationPairs.set([]);
       this.glisserCategories.set(['', '']);
       this.glisserItems.set(['', '', '', '']);
+      this.glisserMapping.set([]);
     }
   }
 
@@ -248,7 +328,8 @@ export class QuestionsComponent implements OnInit {
       case 'glisser-deposer':
         return {
           categories: this.glisserCategories().filter(o => o.trim()),
-          items: this.glisserItems().filter(o => o.trim())
+          items: this.glisserItems().filter(o => o.trim()),
+          mapping: this.glisserMapping().filter(m => m.item && m.category)
         };
       default:
         return null;
@@ -264,9 +345,18 @@ export class QuestionsComponent implements OnInit {
       
       case 'input':
       case 'qcm':
-      case 'remplir-blancs':
         // Format: {"value": "texte"}
         return answerValue ? { value: answerValue } : null;
+      
+      case 'remplir-blancs':
+        // Format: {"value": "texte"} ou {"value": ["texte1", "texte2"], "validateFlexible": true}
+        const answers = this.remplirBlancsAnswers().filter(a => a.trim());
+        if (answers.length === 0) return null;
+        if (answers.length === 1) {
+          return { value: answers[0], validateFlexible: true };
+        } else {
+          return { value: answers, validateFlexible: true };
+        }
       
       case 'association':
         // Format: {"left": [...], "right": [...], "pairs": [...]}
@@ -392,6 +482,10 @@ export class QuestionsComponent implements OnInit {
     this.loadOptionsForType(type, null);
   }
 
+  setVraiFauxAnswer(value: string) {
+    this.formData.set({ ...this.formData(), answer: value });
+  }
+
   // Gestion des paires d'association
   addAssociationPair() {
     this.associationPairs.set([...this.associationPairs(), { left: '', right: '' }]);
@@ -412,6 +506,40 @@ export class QuestionsComponent implements OnInit {
     const left = this.associationLeft().filter(l => l.trim());
     const pairs = left.map(l => ({ left: l, right: '' }));
     this.associationPairs.set(pairs);
+  }
+
+  // Gestion du mapping glisser-déposer
+  addGlisserMapping() {
+    this.glisserMapping.set([...this.glisserMapping(), { item: '', category: '' }]);
+  }
+
+  updateGlisserMapping(index: number, field: 'item' | 'category', value: string) {
+    const mapping = [...this.glisserMapping()];
+    mapping[index][field] = value;
+    this.glisserMapping.set(mapping);
+  }
+
+  removeGlisserMapping(index: number) {
+    this.glisserMapping.set(this.glisserMapping().filter((_, i) => i !== index));
+  }
+
+  autoGenerateGlisserMapping() {
+    const items = this.glisserItems().filter(i => i.trim());
+    const mapping = items.map(i => ({ item: i, category: '' }));
+    this.glisserMapping.set(mapping);
+  }
+
+  // Gestion Remplir-blancs (réponses multiples)
+  updateRemplirBlancsAnswer(index: number, value: string) {
+    const answers = [...this.remplirBlancsAnswers()];
+    answers[index] = value;
+    this.remplirBlancsAnswers.set(answers);
+  }
+  addRemplirBlancsAnswer() {
+    this.remplirBlancsAnswers.set([...this.remplirBlancsAnswers(), '']);
+  }
+  removeRemplirBlancsAnswer(index: number) {
+    this.remplirBlancsAnswers.set(this.remplirBlancsAnswers().filter((_, i) => i !== index));
   }
 }
 

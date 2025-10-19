@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
+import { EmojiService } from '../../services/emoji.service';
 import { Category } from '../../models/category.model';
 
 @Component({
@@ -25,7 +26,13 @@ export class CategoriesComponent implements OnInit {
     icon: ''
   });
 
-  constructor(private dataService: DataService) {}
+  emojiSuggestions = signal<string[]>([]);
+  showEmojiPicker = signal(false);
+
+  constructor(
+    private dataService: DataService,
+    private emojiService: EmojiService
+  ) {}
 
   async ngOnInit() {
     await this.loadCategories();
@@ -108,6 +115,22 @@ export class CategoriesComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  onIconInputChange(value: string) {
+    const suggestions = this.emojiService.searchEmojis(value);
+    this.emojiSuggestions.set(suggestions);
+    this.showEmojiPicker.set(suggestions.length > 0);
+  }
+
+  selectEmoji(emoji: string) {
+    this.formData.set({ ...this.formData(), icon: emoji });
+    this.showEmojiPicker.set(false);
+  }
+
+  showPopularEmojis() {
+    this.emojiSuggestions.set(this.emojiService.getPopularEmojis());
+    this.showEmojiPicker.set(true);
   }
 }
 

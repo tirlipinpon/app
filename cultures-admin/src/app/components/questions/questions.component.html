@@ -18,7 +18,7 @@
         (change)="onTypeFilterChange()"
         class="type-filter"
       >
-        <option [value]="undefined">Tous les types</option>
+        <option value="">Tous les types</option>
         @for (type of questionTypes; track type.value) {
           <option [value]="type.value">{{ type.label }}</option>
         }
@@ -53,7 +53,7 @@
             
             @if (question.options) {
               <div class="options-preview">
-                <strong>Options:</strong> {{ question.options }}
+                <strong>Options:</strong> {{ formatOptionsPreview(question.options, question.question_type) }}
               </div>
             }
 
@@ -200,62 +200,70 @@
           <!-- Options Association -->
           @if (formData().question_type === 'association') {
             <div class="association-full">
+              <div class="info-box" style="margin-bottom: 16px;">
+                ℹ️ <strong>Association :</strong> Définis les items à associer, puis les bonnes paires.
+                Exemple : France → Paris, Italie → Rome
+              </div>
+              
               <div class="association-section">
                 <div class="association-col">
-                  <label>Colonne gauche</label>
+                  <label>Colonne gauche (items à associer)</label>
                   @for (item of associationLeft(); track $index) {
                     <div class="option-input">
                       <input 
                         type="text" 
                         [value]="item"
                         (input)="updateAssociationLeft($index, $any($event.target).value)"
-                        placeholder="Item gauche {{ $index + 1 }}"
+                        placeholder="Ex: France"
                       >
                       @if (associationLeft().length > 2) {
                         <button type="button" (click)="removeAssociationLeft($index)" class="btn-remove">✖</button>
                       }
                     </div>
                   }
-                  <button type="button" (click)="addAssociationLeft()" class="btn-add-small">➕</button>
+                  <button type="button" (click)="addAssociationLeft()" class="btn-add-small">➕ Item</button>
                 </div>
 
                 <div class="association-col">
-                  <label>Colonne droite (peut contenir + d'items)</label>
+                  <label>Colonne droite (choix possibles)</label>
                   @for (item of associationRight(); track $index) {
                     <div class="option-input">
                       <input 
                         type="text" 
                         [value]="item"
                         (input)="updateAssociationRight($index, $any($event.target).value)"
-                        placeholder="Item droit {{ $index + 1 }}"
+                        placeholder="Ex: Paris"
                       >
                       @if (associationRight().length > 2) {
                         <button type="button" (click)="removeAssociationRight($index)" class="btn-remove">✖</button>
                       }
                     </div>
                   }
-                  <button type="button" (click)="addAssociationRight()" class="btn-add-small">➕</button>
+                  <button type="button" (click)="addAssociationRight()" class="btn-add-small">➕ Item</button>
                 </div>
               </div>
 
               <div class="pairs-section">
                 <div class="pairs-header">
-                  <label>Bonnes paires (gauche → droite) *</label>
+                  <label>🔗 Bonnes correspondances</label>
                   <button type="button" (click)="autoGeneratePairs()" class="btn-auto">⚡ Auto-générer</button>
                 </div>
+                <p class="pairs-help">
+                  Pour chaque item de gauche, choisis le bon item de droite
+                </p>
                 @if (associationPairs().length === 0) {
                   <div class="info-box">
-                    Cliquez sur "Auto-générer" pour créer les paires à partir des items de gauche
+                    Cliquez sur "⚡ Auto-générer" pour créer automatiquement les lignes
                   </div>
                 }
                 @for (pair of associationPairs(); track $index) {
                   <div class="pair-input">
                     <select 
-                      [value]="pair.left"
-                      (change)="updateAssociationPair($index, 'left', $any($event.target).value)"
+                      [(ngModel)]="pair.left"
+                      [name]="'pair_left_' + $index"
                       class="pair-select"
                     >
-                      <option value="">-- Choisir gauche --</option>
+                      <option value="">-- Item de gauche --</option>
                       @for (item of associationLeft(); track item) {
                         @if (item.trim()) {
                           <option [value]="item">{{ item }}</option>
@@ -264,11 +272,11 @@
                     </select>
                     <span class="arrow">→</span>
                     <select 
-                      [value]="pair.right"
-                      (change)="updateAssociationPair($index, 'right', $any($event.target).value)"
+                      [(ngModel)]="pair.right"
+                      [name]="'pair_right_' + $index"
                       class="pair-select"
                     >
-                      <option value="">-- Choisir droite --</option>
+                      <option value="">-- Item de droite --</option>
                       @for (item of associationRight(); track item) {
                         @if (item.trim()) {
                           <option [value]="item">{{ item }}</option>
@@ -278,48 +286,101 @@
                     <button type="button" (click)="removeAssociationPair($index)" class="btn-remove">✖</button>
                   </div>
                 }
-                <button type="button" (click)="addAssociationPair()" class="btn-add">➕ Ajouter une paire</button>
+                <button type="button" (click)="addAssociationPair()" class="btn-add">➕ Ajouter une correspondance</button>
               </div>
             </div>
           }
 
           <!-- Options Glisser-Déposer -->
           @if (formData().question_type === 'glisser-deposer') {
-            <div class="glisser-section">
-              <div class="glisser-col">
-                <label>Catégories</label>
-                @for (cat of glisserCategories(); track $index) {
-                  <div class="option-input">
-                    <input 
-                      type="text" 
-                      [value]="cat"
-                      (input)="updateGlisserCategory($index, $any($event.target).value)"
-                      placeholder="Catégorie {{ $index + 1 }}"
-                    >
-                    @if (glisserCategories().length > 2) {
-                      <button type="button" (click)="removeGlisserCategory($index)" class="btn-remove">✖</button>
-                    }
-                  </div>
-                }
-                <button type="button" (click)="addGlisserCategory()" class="btn-add-small">➕</button>
+            <div class="glisser-full">
+              <div class="info-box" style="margin-bottom: 16px;">
+                ℹ️ <strong>Glisser-Déposer :</strong> Définis les catégories, les items, puis dans quelle catégorie va chaque item.
+                Exemple : Chat → Mammifères, Serpent → Reptiles
               </div>
 
-              <div class="glisser-col">
-                <label>Items à classer</label>
-                @for (item of glisserItems(); track $index) {
-                  <div class="option-input">
-                    <input 
-                      type="text" 
-                      [value]="item"
-                      (input)="updateGlisserItem($index, $any($event.target).value)"
-                      placeholder="Item {{ $index + 1 }}"
-                    >
-                    @if (glisserItems().length > 2) {
-                      <button type="button" (click)="removeGlisserItem($index)" class="btn-remove">✖</button>
-                    }
+              <div class="glisser-section">
+                <div class="glisser-col">
+                  <label>Catégories (zones de dépôt)</label>
+                  @for (cat of glisserCategories(); track $index) {
+                    <div class="option-input">
+                      <input 
+                        type="text" 
+                        [value]="cat"
+                        (input)="updateGlisserCategory($index, $any($event.target).value)"
+                        placeholder="Ex: Mammifères"
+                      >
+                      @if (glisserCategories().length > 2) {
+                        <button type="button" (click)="removeGlisserCategory($index)" class="btn-remove">✖</button>
+                      }
+                    </div>
+                  }
+                  <button type="button" (click)="addGlisserCategory()" class="btn-add-small">➕ Catégorie</button>
+                </div>
+
+                <div class="glisser-col">
+                  <label>Items à classer</label>
+                  @for (item of glisserItems(); track $index) {
+                    <div class="option-input">
+                      <input 
+                        type="text" 
+                        [value]="item"
+                        (input)="updateGlisserItem($index, $any($event.target).value)"
+                        placeholder="Ex: Chat"
+                      >
+                      @if (glisserItems().length > 2) {
+                        <button type="button" (click)="removeGlisserItem($index)" class="btn-remove">✖</button>
+                      }
+                    </div>
+                  }
+                  <button type="button" (click)="addGlisserItem()" class="btn-add-small">➕ Item</button>
+                </div>
+              </div>
+
+              <div class="pairs-section">
+                <div class="pairs-header">
+                  <label>🎯 Classification correcte</label>
+                  <button type="button" (click)="autoGenerateGlisserMapping()" class="btn-auto">⚡ Auto-générer</button>
+                </div>
+                <p class="pairs-help">
+                  Pour chaque item, choisis dans quelle catégorie il doit aller
+                </p>
+                @if (glisserMapping().length === 0) {
+                  <div class="info-box">
+                    Cliquez sur "⚡ Auto-générer" pour créer automatiquement les lignes
                   </div>
                 }
-                <button type="button" (click)="addGlisserItem()" class="btn-add-small">➕</button>
+                @for (map of glisserMapping(); track $index) {
+                  <div class="pair-input">
+                    <select 
+                      [(ngModel)]="map.item"
+                      [name]="'glisser_item_' + $index"
+                      class="pair-select"
+                    >
+                      <option value="">-- Choisir un item --</option>
+                      @for (item of glisserItems(); track item) {
+                        @if (item.trim()) {
+                          <option [value]="item">{{ item }}</option>
+                        }
+                      }
+                    </select>
+                    <span class="arrow">→</span>
+                    <select 
+                      [(ngModel)]="map.category"
+                      [name]="'glisser_cat_' + $index"
+                      class="pair-select"
+                    >
+                      <option value="">-- Catégorie --</option>
+                      @for (cat of glisserCategories(); track cat) {
+                        @if (cat.trim()) {
+                          <option [value]="cat">{{ cat }}</option>
+                        }
+                      }
+                    </select>
+                    <button type="button" (click)="removeGlisserMapping($index)" class="btn-remove">✖</button>
+                  </div>
+                }
+                <button type="button" (click)="addGlisserMapping()" class="btn-add">➕ Ajouter une classification</button>
               </div>
             </div>
           }
@@ -331,16 +392,16 @@
               <div class="vraifaux-buttons">
                 <button 
                   type="button"
-                  [class.active]="formData().answer === 'Vrai' || formData().answer === true"
-                  (click)="formData().answer = 'Vrai'"
+                  [class.active]="formData().answer === 'Vrai'"
+                  (click)="setVraiFauxAnswer('Vrai')"
                   class="vraifaux-btn vrai-btn"
                 >
                   ✓ Vrai
                 </button>
                 <button 
                   type="button"
-                  [class.active]="formData().answer === 'Faux' || formData().answer === false"
-                  (click)="formData().answer = 'Faux'"
+                  [class.active]="formData().answer === 'Faux'"
+                  (click)="setVraiFauxAnswer('Faux')"
                   class="vraifaux-btn faux-btn"
                 >
                   ✗ Faux
@@ -364,20 +425,25 @@
             </div>
           }
 
-          <!-- Info pour Remplir-blancs -->
+          <!-- Réponses pour Remplir-blancs -->
           @if (formData().question_type === 'remplir-blancs') {
-            <div class="info-box">
-              ℹ️ Pour "Remplir les blancs", indiquez la réponse ci-dessous
-            </div>
-            <div class="form-group">
-              <label for="answer-blancs">Réponse correcte</label>
-              <input 
-                type="text" 
-                id="answer-blancs" 
-                [(ngModel)]="formData().answer"
-                name="answer"
-                placeholder="Réponse pour les blancs"
-              >
+            <div class="options-section">
+              <label>Réponses acceptées (plusieurs réponses possibles)</label>
+              <p class="help-text">Ajoute toutes les variations acceptables (ex: nectar, pollen, miel)</p>
+              @for (answer of remplirBlancsAnswers(); track $index) {
+                <div class="option-input">
+                  <input 
+                    type="text" 
+                    [value]="answer"
+                    (input)="updateRemplirBlancsAnswer($index, $any($event.target).value)"
+                    placeholder="Réponse {{ $index + 1 }}"
+                  >
+                  @if (remplirBlancsAnswers().length > 1) {
+                    <button type="button" (click)="removeRemplirBlancsAnswer($index)" class="btn-remove">✖</button>
+                  }
+                </div>
+              }
+              <button type="button" (click)="addRemplirBlancsAnswer()" class="btn-add">➕ Ajouter une réponse</button>
             </div>
           }
 
@@ -425,5 +491,12 @@
         </form>
       </div>
     </div>
+  }
+
+  <!-- Bouton scroll to top -->
+  @if (showScrollTop()) {
+    <button (click)="scrollToTop()" class="scroll-top-btn" title="Remonter">
+      ⬆️
+    </button>
   }
 </div>
