@@ -2,7 +2,7 @@ export interface Question {
   id?: string;
   category_id: number;
   question_text: string;
-  question_type: 'input' | 'qcm' | 'vrai-faux' | 'ordre' | 'association' | 'glisser-deposer' | 'remplir-blancs';
+  question_type: 'input' | 'qcm' | 'vrai-faux' | 'ordre' | 'association' | 'glisser-deposer' | 'remplir-blancs' | 'map-click' | 'timeline';
   answer?: any; // Réponse correcte (pour vrai-faux, input, etc.)
   options?: any;
   tags?: string[];

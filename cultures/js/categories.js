@@ -4,7 +4,7 @@
 
 // 📦 Catégories du jeu (chargées depuis Supabase)
 // Cette structure est utilisée comme fallback si Supabase n'est pas accessible
-const CATEGORIES = [
+let CATEGORIES = [
   { id: 0, key: "toutes", name: "📦 Toutes", icon: "📦" },
   { id: 1, key: "culture", name: "🎭 Culture générale", icon: "🎭" },
   { id: 2, key: "science", name: "🔬 Science", icon: "🔬" },
@@ -14,13 +14,44 @@ const CATEGORIES = [
 ];
 
 // Correspondance ID → Catégorie
-const CATEGORIES_BY_ID = {};
-const CATEGORIES_BY_KEY = {};
+let CATEGORIES_BY_ID = {};
+let CATEGORIES_BY_KEY = {};
 
-CATEGORIES.forEach(cat => {
-  CATEGORIES_BY_ID[cat.id] = cat;
-  CATEGORIES_BY_KEY[cat.key] = cat;
-});
+// Fonction pour initialiser les dictionnaires
+function buildCategoryMaps() {
+  CATEGORIES_BY_ID = {};
+  CATEGORIES_BY_KEY = {};
+  CATEGORIES.forEach(cat => {
+    CATEGORIES_BY_ID[cat.id] = cat;
+    CATEGORIES_BY_KEY[cat.key] = cat;
+  });
+}
+
+buildCategoryMaps();
+
+// Fonction pour mettre à jour les catégories depuis Supabase
+function updateCategories(categoriesFromSupabase) {
+  if (!categoriesFromSupabase || categoriesFromSupabase.length === 0) return;
+  
+  // Toujours garder "toutes" en premier
+  const toutes = { id: 0, key: "toutes", name: "📦 Toutes", icon: "📦" };
+  
+  // Transformer les catégories Supabase au bon format
+  const formattedCategories = categoriesFromSupabase.map(cat => ({
+    id: cat.id,
+    key: cat.key,
+    name: cat.icon ? `${cat.icon} ${cat.name}` : cat.name,
+    icon: cat.icon || "📁"
+  }));
+  
+  // Remplacer CATEGORIES
+  CATEGORIES = [toutes, ...formattedCategories];
+  
+  // Reconstruire les dictionnaires
+  buildCategoryMaps();
+  
+  console.log(`🗂️ ${CATEGORIES.length} catégories mises à jour`);
+}
 
 // Obtenir une catégorie par ID
 function getCategoryById(id) {

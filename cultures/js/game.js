@@ -69,6 +69,11 @@ class CultureGame {
       const categories = await this.supabaseService.loadCategories();
       console.log(`✅ ${categories.length} catégories chargées`);
       
+      // Mettre à jour les catégories dynamiquement
+      if (typeof updateCategories === 'function') {
+        updateCategories(categories);
+      }
+      
     } catch (error) {
       console.error('❌ Erreur lors du chargement:', error);
       this.ui.showFeedback('Erreur lors du chargement. Vérifiez votre connexion.', 'error');

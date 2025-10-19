@@ -1,0 +1,272 @@
+.map-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.editor-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.image-wrapper {
+  position: relative;
+  background: #f5f5f5;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+.image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.image-wrapper img.drawing {
+  cursor: crosshair;
+}
+
+.zones-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.zones-overlay polygon,
+.zones-overlay polyline {
+  pointer-events: all;
+}
+
+.zones-overlay polygon {
+  fill: rgba(102, 126, 234, 0.3);
+  stroke: #667eea;
+  stroke-width: 2;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.zones-overlay polygon:hover {
+  fill: rgba(102, 126, 234, 0.5);
+  stroke-width: 3;
+}
+
+.zones-overlay polygon.correct-zone {
+  fill: rgba(76, 175, 80, 0.3);
+  stroke: #4CAF50;
+  stroke-width: 3;
+}
+
+.zones-overlay polygon.selected {
+  fill: rgba(255, 193, 7, 0.4);
+  stroke: #ffc107;
+  stroke-width: 4;
+}
+
+.drawing-zone {
+  fill: none;
+  stroke: #667eea;
+  stroke-width: 2;
+  stroke-dasharray: 5;
+}
+
+.point-marker {
+  fill: #667eea;
+  stroke: white;
+  stroke-width: 2;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawing-info {
+  padding: 16px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.drawing-info p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #1976D2;
+}
+
+.drawing-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #fff3cd;
+  border-radius: 8px;
+}
+
+.label-input input {
+  padding: 12px;
+  border: 2px solid #ffc107;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.btn-success {
+  padding: 12px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-success:hover {
+  background: #45a049;
+}
+
+.zones-list {
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.zones-list h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+}
+
+.empty {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.zone-item {
+  padding: 12px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+
+.zone-item.selected {
+  border-color: #ffc107;
+  background: #fffbf0;
+}
+
+.zone-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.zone-info strong {
+  color: #333;
+}
+
+.points-count {
+  font-size: 12px;
+  color: #666;
+  background: #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.correct-badge {
+  font-size: 12px;
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.zone-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-set-correct {
+  flex: 1;
+  padding: 6px 12px;
+  background: #ffc107;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-set-correct:hover {
+  background: #ffb300;
+}
+
+.btn-unset-correct {
+  flex: 1;
+  padding: 6px 12px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-unset-correct:hover {
+  background: #45a049;
+}
+
+.correct-count {
+  color: #4CAF50;
+  font-weight: normal;
+  font-size: 0.9em;
+}
+
+.help-text {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 8px 0;
+  font-style: italic;
+}
+
+.btn-delete-small {
+  padding: 6px 12px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.btn-delete-small:hover {
+  background: #d32f2f;
+}
+
+.no-image {
+  padding: 60px;
+  text-align: center;
+  background: #f5f5f5;
+  border-radius: 8px;
+  color: #666;
+}
+

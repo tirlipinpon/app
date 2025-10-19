@@ -81,11 +81,18 @@ export class CategoriesComponent implements OnInit {
 
     try {
       const editing = this.editingCategory();
+      const data = { ...this.formData() };
+      
+      // Générer le key automatiquement à partir du name (en minuscules, sans accents)
+      if (!editing) {
+        const key = this.generateKey(data.name);
+        (data as any).key = key;
+      }
       
       if (editing) {
-        await this.dataService.updateCategory(editing.id!, this.formData());
+        await this.dataService.updateCategory(editing.id!, data);
       } else {
-        await this.dataService.createCategory(this.formData());
+        await this.dataService.createCategory(data);
       }
 
       await this.loadCategories();
@@ -96,6 +103,16 @@ export class CategoriesComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private generateKey(name: string): string {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Enlever accents
+      .replace(/[^a-z0-9]/g, '-') // Remplacer caractères spéciaux par -
+      .replace(/-+/g, '-') // Remplacer multiples - par un seul
+      .replace(/^-|-$/g, ''); // Enlever - au début/fin
   }
 
   async deleteCategory(category: Category) {

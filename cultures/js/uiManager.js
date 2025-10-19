@@ -392,35 +392,77 @@ class UIManager {
     if (!answerContainer) return;
     
     // questionData.options devrait contenir :
-    // { mapKey: "europe", zones: [...] } ou directement le mapKey
+    // Nouveau format : { imageUrl: "...", zones: [...] }
+    // Ancien format : { mapKey: "europe", zones: [...] } ou directement le mapKey
     const mapData = questionData.options || {};
-    const mapKey = typeof mapData === 'string' ? mapData : (mapData.mapKey || 'europe');
     
-    // Récupérer le SVG depuis mapSvgs.js
-    const mapSvg = typeof getMapSvg === 'function' ? getMapSvg(mapKey) : '';
-    const zones = typeof getMapZones === 'function' ? getMapZones(mapKey) : [];
+    let html = '';
+    let zones = [];
     
-    let html = `
-      <div class="map-click-container">
-        <div class="map-wrapper" id="mapWrapper">
-          <div class="map-svg-container" id="mapSvgContainer">
-            ${mapSvg}
+    // Vérifier si c'est une image uploadée (nouveau format)
+    if (mapData.imageUrl && mapData.zones) {
+      console.log('🗺️ Map-click avec image uploadée:', mapData.imageUrl);
+      console.log('🎯 Mode de validation:', mapData.validationMode || 'any (défaut)');
+      console.log('📍 Nombre de zones:', mapData.zones.length);
+      zones = mapData.zones;
+      
+      // Créer un SVG avec l'image et les zones clicables
+      const zonesPolygons = zones.map(zone => {
+        const points = zone.points.map(p => {
+          const x = Math.round(p.x * 100) / 100; // Arrondir à 2 décimales
+          const y = Math.round(p.y * 100) / 100;
+          return `${x},${y}`; // Pas de % car on utilise viewBox="0 0 100 100"
+        }).join(' ');
+        return `<polygon class="map-zone" data-zone="${zone.id}" points="${points}" />`;
+      }).join('');
+      
+      html = `
+        <div class="map-click-container">
+          <div class="map-wrapper" id="mapWrapper">
+            <div class="map-svg-container" id="mapSvgContainer">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+                <image href="${mapData.imageUrl}" x="0" y="0" width="100" height="100" />
+                <g class="zones-overlay">
+                  ${zonesPolygons}
+                </g>
+              </svg>
+            </div>
+            <div class="map-click-marker hidden" id="mapMarker">📍</div>
           </div>
-          <div class="map-click-marker hidden" id="mapMarker">📍</div>
+          <div class="map-instruction">
+            👆 Clique sur la carte pour répondre
+          </div>
         </div>
-        <div class="map-instruction">
-          👆 Clique sur la carte pour répondre
+      `;
+    } else {
+      // Ancien format avec mapKey (fallback)
+      console.log('🗺️ Map-click avec SVG en dur');
+      const mapKey = typeof mapData === 'string' ? mapData : (mapData.mapKey || 'europe');
+      const mapSvg = typeof getMapSvg === 'function' ? getMapSvg(mapKey) : '';
+      zones = typeof getMapZones === 'function' ? getMapZones(mapKey) : [];
+      
+      html = `
+        <div class="map-click-container">
+          <div class="map-wrapper" id="mapWrapper">
+            <div class="map-svg-container" id="mapSvgContainer">
+              ${mapSvg}
+            </div>
+            <div class="map-click-marker hidden" id="mapMarker">📍</div>
+          </div>
+          <div class="map-instruction">
+            👆 Clique sur la carte pour répondre
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
     
     answerContainer.innerHTML = html;
     
-    // Stocker les zones pour l'input handler
+    // Stocker les zones et le mode de validation pour l'input handler
     const mapWrapper = document.getElementById('mapWrapper');
     if (mapWrapper) {
       mapWrapper.dataset.zones = JSON.stringify(zones);
-      mapWrapper.dataset.mapKey = mapKey;
+      mapWrapper.dataset.validationMode = mapData.validationMode || 'any';
     }
   }
   

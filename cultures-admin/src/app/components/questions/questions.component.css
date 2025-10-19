@@ -367,6 +367,25 @@
   transform: translateY(-2px);
 }
 
+/* Map-click section */
+.mapclick-section {
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.upload-status {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.upload-status.success {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
 /* Sections d'options */
 .options-section,
 .association-section,
@@ -589,5 +608,18 @@
   border-width: 3px;
   background: currentColor;
   color: white !important;
+}
+
+.map-preview {
+  margin-top: 10px;
+}
+
+.map-thumbnail {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 

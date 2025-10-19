@@ -920,6 +920,30 @@ body {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
+.map-zone {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 2;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-zone:hover {
+  fill: rgba(102, 126, 234, 0.2);
+  stroke: rgba(102, 126, 234, 0.5);
+}
+
+.map-zone:active {
+  fill: rgba(102, 126, 234, 0.3);
+}
+
+.map-zone.zone-found {
+  fill: rgba(76, 175, 80, 0.3) !important;
+  stroke: rgba(76, 175, 80, 0.8) !important;
+  stroke-width: 3;
+  pointer-events: none;
+}
+
 .map-instruction {
   text-align: center;
   color: var(--text-light);

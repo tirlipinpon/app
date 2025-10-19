@@ -2,13 +2,15 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
+import { ImageService } from '../../services/image.service';
 import { Question } from '../../models/question.model';
 import { Category } from '../../models/category.model';
+import { MapEditorComponent, MapZone } from '../map-editor/map-editor.component';
 
 @Component({
   selector: 'app-questions',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MapEditorComponent],
   templateUrl: './questions.component.html',
   styleUrls: ['./questions.component.css']
 })
@@ -46,6 +48,11 @@ export class QuestionsComponent implements OnInit {
   glisserItems = signal<string[]>(['', '', '', '']);
   glisserMapping = signal<{item: string, category: string}[]>([]);
   remplirBlancsAnswers = signal<string[]>(['']);
+  mapImageUrl = signal<string>('');
+  mapImageBlob = signal<Blob | null>(null);
+  mapZones = signal<MapZone[]>([]);
+  mapValidationMode = signal<'any' | 'all'>('any');
+  uploadingImage = signal(false);
 
   questionTypes = [
     { value: 'input', label: 'Texte libre' },
@@ -54,10 +61,15 @@ export class QuestionsComponent implements OnInit {
     { value: 'ordre', label: 'Ordre' },
     { value: 'association', label: 'Association' },
     { value: 'glisser-deposer', label: 'Glisser-déposer' },
-    { value: 'remplir-blancs', label: 'Remplir les blancs' }
+    { value: 'remplir-blancs', label: 'Remplir les blancs' },
+    { value: 'map-click', label: 'Carte clicable' },
+    { value: 'timeline', label: 'Chronologie' }
   ];
 
-  constructor(private dataService: DataService) {}
+  constructor(
+    private dataService: DataService,
+    private imageService: ImageService
+  ) {}
 
   async ngOnInit() {
     await this.loadCategories();
@@ -217,6 +229,12 @@ export class QuestionsComponent implements OnInit {
     if (question.question_type === 'association' && question.answer) {
       // Pour association, charger depuis answer (pas options)
       this.loadOptionsForType(question.question_type, question.answer);
+    } else if (question.question_type === 'map-click' && question.options) {
+      // Pour map-click, charger image et zones
+      if (question.options.imageUrl) {
+        this.mapImageUrl.set(question.options.imageUrl);
+        this.mapZones.set(question.options.zones || []);
+      }
     } else {
       this.loadOptionsForType(question.question_type, question.options);
     }
@@ -265,6 +283,18 @@ export class QuestionsComponent implements OnInit {
             this.glisserMapping.set([]);
           }
           break;
+        
+        case 'map-click':
+          if (opts && opts.imageUrl) {
+            this.mapImageUrl.set(opts.imageUrl);
+            this.mapZones.set(opts.zones || []);
+            this.mapValidationMode.set(opts.validationMode || 'any');
+          } else {
+            this.mapImageUrl.set('');
+            this.mapZones.set([]);
+            this.mapValidationMode.set('any');
+          }
+          break;
       }
     } catch (e) {
       // Reset aux valeurs par défaut
@@ -291,6 +321,17 @@ export class QuestionsComponent implements OnInit {
     try {
       const editing = this.editingQuestion();
       const data = { ...this.formData() };
+      
+      // Si c'est un map-click avec une nouvelle image, uploader maintenant
+      if (data.question_type === 'map-click' && this.mapImageBlob()) {
+        console.log('📤 Upload de l\'image vers Supabase...');
+        const finalImageUrl = await this.imageService.uploadOptimizedImage(
+          this.mapImageBlob()!,
+          data.id
+        );
+        console.log('✅ Image uploadée:', finalImageUrl);
+        this.mapImageUrl.set(finalImageUrl);
+      }
       
       // Construire les options selon le type
       data.options = this.buildOptionsForType(data.question_type);
@@ -331,6 +372,12 @@ export class QuestionsComponent implements OnInit {
           items: this.glisserItems().filter(o => o.trim()),
           mapping: this.glisserMapping().filter(m => m.item && m.category)
         };
+      case 'map-click':
+        return {
+          imageUrl: this.mapImageUrl(),
+          zones: this.mapZones(),
+          validationMode: this.mapValidationMode()
+        };
       default:
         return null;
     }
@@ -367,6 +414,21 @@ export class QuestionsComponent implements OnInit {
           right: this.associationRight().filter(o => o.trim()),
           pairs: pairs
         };
+      
+      case 'map-click':
+        // Format: Array des IDs des zones correctes (peut être plusieurs)
+        const correctZones = this.mapZones().filter(z => z.isCorrect);
+        if (correctZones.length === 0) return null;
+        
+        // Mode "all" : retourner toujours un array pour forcer la collecte de toutes les zones
+        if (this.mapValidationMode() === 'all') {
+          return correctZones.map(z => z.id);
+        }
+        
+        // Mode "any" : Si une seule zone, retourner l'ID directement (rétrocompatibilité)
+        if (correctZones.length === 1) return correctZones[0].id;
+        // Si plusieurs zones, retourner un array d'IDs
+        return correctZones.map(z => z.id);
       
       case 'ordre':
       case 'glisser-deposer':
@@ -540,6 +602,45 @@ export class QuestionsComponent implements OnInit {
   }
   removeRemplirBlancsAnswer(index: number) {
     this.remplirBlancsAnswers.set(this.remplirBlancsAnswers().filter((_, i) => i !== index));
+  }
+
+  // Gestion Map-Click
+  async onImageUpload(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner une image');
+      return;
+    }
+
+    this.uploadingImage.set(true);
+    this.error.set('');
+
+    try {
+      console.log('🖼️ Optimisation image...');
+      
+      // Optimiser l'image en local (pas encore d'upload)
+      const { blob, dataUrl } = await this.imageService.optimizeImage(file);
+      console.log('✅ Image optimisée:', blob.size, 'bytes');
+      
+      // Afficher l'image pour dessiner les zones
+      this.mapImageUrl.set(dataUrl);
+      this.mapImageBlob.set(blob);
+      this.mapZones.set([]); // Reset zones
+      
+      console.log('📍 Image prête pour édition');
+    } catch (error: any) {
+      this.error.set('Erreur: ' + error.message);
+      console.error('❌ Erreur optimisation:', error);
+      alert('Erreur optimisation: ' + error.message);
+    } finally {
+      this.uploadingImage.set(false);
+    }
+  }
+
+  onMapZonesChange(zones: MapZone[]) {
+    this.mapZones.set(zones);
   }
 }
 

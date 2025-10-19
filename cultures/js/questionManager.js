@@ -384,8 +384,24 @@ class QuestionManager {
   // ==========================================
   
   validateMapClick(userAnswer, correctAnswer) {
-    // userAnswer = l'ID de la zone cliquée
-    // correctAnswer = l'ID de la zone correcte
+    // userAnswer = l'ID de la zone cliquée OU array d'IDs (mode "all")
+    // correctAnswer = l'ID de la zone correcte OU array d'IDs (plusieurs zones valides)
+    
+    // Mode "all" : userAnswer est un array de toutes les zones trouvées
+    if (Array.isArray(userAnswer) && Array.isArray(correctAnswer)) {
+      // Vérifier que toutes les zones correctes sont présentes
+      const sortedUser = [...userAnswer].sort();
+      const sortedCorrect = [...correctAnswer].sort();
+      return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect);
+    }
+    
+    // Mode "any" : userAnswer est un ID unique
+    if (Array.isArray(correctAnswer)) {
+      // Plusieurs zones valides
+      return correctAnswer.includes(userAnswer);
+    }
+    
+    // Une seule zone valide (rétrocompatibilité)
     return userAnswer === correctAnswer;
   }
   

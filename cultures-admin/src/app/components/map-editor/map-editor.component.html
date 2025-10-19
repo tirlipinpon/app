@@ -1,0 +1,129 @@
+<div class="map-editor">
+  @if (imageUrl) {
+    <div class="editor-container">
+      <div class="image-wrapper">
+        <img 
+          [src]="imageUrl" 
+          (click)="onImageClick($event)"
+          [class.drawing]="isDrawing()"
+          alt="Carte interactive"
+        >
+        
+        <!-- SVG overlay pour dessiner les zones -->
+        <svg class="zones-overlay">
+          <!-- Zones existantes -->
+          @for (zone of zones; track zone.id) {
+            <polygon
+              [attr.points]="getPolygonPoints(zone)"
+              [class.correct-zone]="zone.isCorrect"
+              [class.selected]="selectedZone() === zone.id"
+              (click)="selectZone(zone.id); $event.stopPropagation()"
+            />
+          }
+          
+          <!-- Zone en cours de dessin -->
+          @if (currentZone().length > 0) {
+            <polyline
+              [attr.points]="getCurrentZonePoints()"
+              class="drawing-zone"
+            />
+            @for (point of currentZone(); track $index) {
+              <circle
+                [attr.cx]="point.x + '%'"
+                [attr.cy]="point.y + '%'"
+                r="5"
+                class="point-marker"
+              />
+            }
+          }
+        </svg>
+      </div>
+
+      <div class="controls">
+        @if (!isDrawing() && !showLabelInput()) {
+          <button type="button" (click)="startDrawing()" class="btn-primary">
+            ✏️ Dessiner une nouvelle zone
+          </button>
+        }
+
+        @if (isDrawing()) {
+          <div class="drawing-info">
+            <p>🖱️ Clique sur l'image pour ajouter des points (min 3)</p>
+            <p>Points: {{ currentZone().length }}</p>
+          </div>
+          <div class="drawing-actions">
+            <button type="button" (click)="finishZone()" class="btn-success">
+              ✅ Terminer la zone
+            </button>
+            <button type="button" (click)="cancelZone()" class="btn-secondary">
+              ❌ Annuler
+            </button>
+          </div>
+        }
+
+        @if (showLabelInput()) {
+          <div class="label-input">
+            <input 
+              type="text"
+              [(ngModel)]="newZoneLabel"
+              placeholder="Nom de la zone (ex: Paris)"
+              autofocus
+            >
+            <button type="button" (click)="saveZone()" class="btn-success">
+              💾 Enregistrer
+            </button>
+            <button type="button" (click)="cancelZone()" class="btn-secondary">
+              Annuler
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="zones-list">
+      <h4>Zones définies ({{ zones.length }}) 
+        @if (getCorrectZonesCount() > 0) {
+          <span class="correct-count">— {{ getCorrectZonesCount() }} correcte(s)</span>
+        }
+      </h4>
+      @if (zones.length === 0) {
+        <p class="empty">Aucune zone. Commence par dessiner une zone clicable !</p>
+      } @else {
+        <p class="help-text">💡 Tu peux marquer plusieurs zones comme correctes si plusieurs réponses sont valides</p>
+      }
+      @for (zone of zones; track zone.id) {
+        <div class="zone-item" [class.selected]="selectedZone() === zone.id">
+          <div class="zone-info">
+            <strong>{{ zone.label }}</strong>
+            <span class="points-count">{{ zone.points.length }} points</span>
+            @if (zone.isCorrect) {
+              <span class="correct-badge">✅ Correcte</span>
+            }
+          </div>
+          <div class="zone-actions">
+            <button 
+              type="button" 
+              (click)="toggleCorrectZone(zone.id)"
+              [class.btn-set-correct]="!zone.isCorrect"
+              [class.btn-unset-correct]="zone.isCorrect"
+            >
+              {{ zone.isCorrect ? '✅ Retirer' : '⭐ Marquer correcte' }}
+            </button>
+            <button 
+              type="button" 
+              (click)="deleteZone(zone.id)"
+              class="btn-delete-small"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="no-image">
+      <p>Aucune image uploadée</p>
+    </div>
+  }
+</div>
+

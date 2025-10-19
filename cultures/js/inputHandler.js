@@ -968,9 +968,20 @@ class InputHandler {
     
     if (!mapWrapper || !mapMarker || !mapSvgContainer) return;
     
-    // Récupérer les zones depuis le dataset (stocké par uiManager)
+    // Récupérer les zones et le mode de validation
     const zonesJson = mapWrapper.dataset.zones;
     const zones = zonesJson ? JSON.parse(zonesJson) : [];
+    const validationMode = mapWrapper.dataset.validationMode || 'any';
+    
+    console.log('🎮 Mode de validation reçu:', validationMode);
+    
+    // Pour le mode "all", stocker les zones trouvées
+    let foundZones = [];
+    const correctAnswer = questionData.answer;
+    const requiredZones = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer];
+    
+    console.log('🎯 Zones requises:', requiredZones);
+    console.log('📊 Mode actif:', validationMode === 'all' && requiredZones.length > 1 ? 'MODE ET (toutes les zones)' : 'MODE OU (une seule zone)');
     
     // Gérer le clic sur les zones SVG
     const handleSvgClick = (e) => {
@@ -988,10 +999,47 @@ class InputHandler {
         mapMarker.style.top = `${y}%`;
         mapMarker.classList.remove('hidden');
         
-        // Validation automatique après 0.5s
-        setTimeout(() => {
-          this.game.handleAnswer(zoneId);
-        }, 500);
+        if (validationMode === 'all' && requiredZones.length > 1) {
+          // Mode "all" : collecter les zones
+          if (requiredZones.includes(zoneId) && !foundZones.includes(zoneId)) {
+            foundZones.push(zoneId);
+            
+            // Marquer visuellement la zone comme trouvée
+            target.classList.add('zone-found');
+            target.style.fill = 'rgba(76, 175, 80, 0.3)';
+            target.style.stroke = 'rgba(76, 175, 80, 0.8)';
+            
+            // Afficher feedback
+            const feedback = document.getElementById('feedback');
+            if (feedback) {
+              feedback.textContent = `✅ Zone trouvée ! (${foundZones.length}/${requiredZones.length})`;
+              feedback.className = 'feedback success';
+            }
+            
+            // Vérifier si toutes les zones sont trouvées
+            if (foundZones.length === requiredZones.length) {
+              setTimeout(() => {
+                this.game.handleAnswer(foundZones);
+              }, 500);
+            }
+          } else if (!requiredZones.includes(zoneId)) {
+            // Zone incorrecte
+            const feedback = document.getElementById('feedback');
+            if (feedback) {
+              feedback.textContent = `❌ Mauvaise zone ! (${foundZones.length}/${requiredZones.length} trouvées)`;
+              feedback.className = 'feedback error';
+              setTimeout(() => {
+                feedback.textContent = `${foundZones.length}/${requiredZones.length} zones trouvées`;
+                feedback.className = 'feedback info';
+              }, 1500);
+            }
+          }
+        } else {
+          // Mode "any" : validation immédiate (comportement actuel)
+          setTimeout(() => {
+            this.game.handleAnswer(zoneId);
+          }, 500);
+        }
       }
     };
     

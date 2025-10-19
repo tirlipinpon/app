@@ -51,7 +51,11 @@
           <div class="question-content">
             <h3>{{ question.question_text }}</h3>
             
-            @if (question.options) {
+            @if (question.question_type === 'map-click' && question.options?.imageUrl) {
+              <div class="map-preview">
+                <img [src]="question.options.imageUrl" alt="Carte" class="map-thumbnail">
+              </div>
+            } @else if (question.options) {
               <div class="options-preview">
                 <strong>Options:</strong> {{ formatOptionsPreview(question.options, question.question_type) }}
               </div>
@@ -422,6 +426,60 @@
                 required
                 placeholder="La bonne réponse"
               >
+            </div>
+          }
+
+          <!-- Options Map-Click -->
+          @if (formData().question_type === 'map-click') {
+            <div class="mapclick-section">
+              <div class="form-group">
+                <label for="mapImage">Image de la carte *</label>
+                <input 
+                  type="file" 
+                  id="mapImage"
+                  accept="image/*"
+                  (change)="onImageUpload($event)"
+                >
+                @if (uploadingImage()) {
+                  <p class="upload-status">⏳ Upload et optimisation en cours...</p>
+                }
+                @if (mapImageUrl()) {
+                  <p class="upload-status success">✅ Image uploadée</p>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="mapValidationMode">Mode de validation *</label>
+                <select 
+                  id="mapValidationMode"
+                  [(ngModel)]="mapValidationMode" 
+                  name="mapValidationMode"
+                >
+                  <option value="any">Une seule zone correcte suffit (mode "OU")</option>
+                  <option value="all">Toutes les zones correctes doivent être trouvées (mode "ET")</option>
+                </select>
+                <p class="help-text">
+                  @if (mapValidationMode() === 'any') {
+                    💡 Le joueur doit cliquer sur n'importe quelle zone marquée comme correcte
+                  } @else {
+                    💡 Le joueur doit trouver et cliquer sur toutes les zones marquées comme correctes
+                  }
+                </p>
+              </div>
+
+              @if (mapImageUrl()) {
+                <app-map-editor
+                  [imageUrl]="mapImageUrl()"
+                  [zones]="mapZones()"
+                  (zonesChange)="onMapZonesChange($event)"
+                ></app-map-editor>
+              }
+
+              @if (!mapImageUrl()) {
+                <div class="info-box">
+                  ℹ️ Uploadez d'abord une image. Elle sera automatiquement cropée en 600x600, convertie en WebP et optimisée.
+                </div>
+              }
             </div>
           }
 
