@@ -101,76 +101,44 @@ VALUES (
 INSERT INTO cultures_questions (id, question_text, question_type, category_id, answer, options)
 VALUES (
   'q_mapclick_1',
-  'Clique sur la Belgique',
+  'Clique sur la Belgique 🇧🇪',
   'map-click',
   4, -- Géographie
   '"belgium"'::jsonb,
-  '{
-    "mapImage": "https://example.com/map-europe.png",
-    "zones": [
-      {"id": "belgium", "name": "Belgique", "coords": {"x": 45, "y": 30, "width": 8, "height": 8}},
-      {"id": "france", "name": "France", "coords": {"x": 35, "y": 40, "width": 12, "height": 15}},
-      {"id": "germany", "name": "Allemagne", "coords": {"x": 52, "y": 32, "width": 10, "height": 12}},
-      {"id": "netherlands", "name": "Pays-Bas", "coords": {"x": 46, "y": 25, "width": 7, "height": 6}}
-    ]
-  }'::jsonb
+  '"europe"'::jsonb
 );
 
 -- Question 2 : Paris sur carte de France
 INSERT INTO cultures_questions (id, question_text, question_type, category_id, answer, options)
 VALUES (
   'q_mapclick_2',
-  'Clique sur Paris (la capitale de la France)',
+  'Clique sur Paris (la capitale de la France) 🇫🇷',
   'map-click',
   4, -- Géographie
   '"paris"'::jsonb,
-  '{
-    "mapImage": "https://example.com/map-france.png",
-    "zones": [
-      {"id": "paris", "name": "Paris", "coords": {"x": 48, "y": 35, "width": 5, "height": 5}},
-      {"id": "marseille", "name": "Marseille", "coords": {"x": 55, "y": 70, "width": 5, "height": 5}},
-      {"id": "lyon", "name": "Lyon", "coords": {"x": 52, "y": 50, "width": 5, "height": 5}},
-      {"id": "bordeaux", "name": "Bordeaux", "coords": {"x": 30, "y": 55, "width": 5, "height": 5}}
-    ]
-  }'::jsonb
+  '"france"'::jsonb
 );
 
 -- Question 3 : L'Afrique sur planisphère
 INSERT INTO cultures_questions (id, question_text, question_type, category_id, answer, options)
 VALUES (
   'q_mapclick_3',
-  'Clique sur le continent africain',
+  'Clique sur le continent africain 🌍',
   'map-click',
   4, -- Géographie
   '"africa"'::jsonb,
-  '{
-    "mapImage": "https://example.com/world-map.png",
-    "zones": [
-      {"id": "africa", "name": "Afrique", "coords": {"x": 45, "y": 50, "width": 15, "height": 20}},
-      {"id": "europe", "name": "Europe", "coords": {"x": 48, "y": 25, "width": 12, "height": 15}},
-      {"id": "asia", "name": "Asie", "coords": {"x": 65, "y": 30, "width": 25, "height": 25}},
-      {"id": "america", "name": "Amérique", "coords": {"x": 15, "y": 30, "width": 15, "height": 40}}
-    ]
-  }'::jsonb
+  '"world"'::jsonb
 );
 
--- Question 4 : Océan Atlantique
+-- Question 4 : Europe (différente de Q1)
 INSERT INTO cultures_questions (id, question_text, question_type, category_id, answer, options)
 VALUES (
   'q_mapclick_4',
-  'Clique sur l''océan Atlantique',
+  'Clique sur la France 🇫🇷',
   'map-click',
   4, -- Géographie
-  '"atlantic"'::jsonb,
-  '{
-    "mapImage": "https://example.com/world-map.png",
-    "zones": [
-      {"id": "atlantic", "name": "Atlantique", "coords": {"x": 20, "y": 35, "width": 15, "height": 30}},
-      {"id": "pacific", "name": "Pacifique", "coords": {"x": 5, "y": 30, "width": 10, "height": 35}},
-      {"id": "indian", "name": "Indien", "coords": {"x": 65, "y": 50, "width": 15, "height": 20}},
-      {"id": "mediterranean", "name": "Méditerranée", "coords": {"x": 48, "y": 38, "width": 8, "height": 4}}
-    ]
-  }'::jsonb
+  '"france"'::jsonb,
+  '"europe"'::jsonb
 );
 
 -- Question 5 : Bruxelles en Belgique
@@ -181,15 +149,7 @@ VALUES (
   'map-click',
   4, -- Géographie
   '"brussels"'::jsonb,
-  '{
-    "mapImage": "https://example.com/map-belgium.png",
-    "zones": [
-      {"id": "brussels", "name": "Bruxelles", "coords": {"x": 48, "y": 45, "width": 6, "height": 6}},
-      {"id": "antwerp", "name": "Anvers", "coords": {"x": 52, "y": 30, "width": 6, "height": 6}},
-      {"id": "liege", "name": "Liège", "coords": {"x": 65, "y": 48, "width": 6, "height": 6}},
-      {"id": "bruges", "name": "Bruges", "coords": {"x": 35, "y": 25, "width": 6, "height": 6}}
-    ]
-  }'::jsonb
+  '"belgium"'::jsonb
 );
 
 -- =====================================================
@@ -197,17 +157,17 @@ VALUES (
 -- =====================================================
 -- 
 -- Pour MAP-CLICK :
--- Les URLs des images sont des exemples (https://example.com)
--- Il faudra remplacer par de vraies images :
---   - Option 1 : Héberger dans Supabase Storage
---   - Option 2 : Utiliser des URLs publiques d'images de cartes
---   - Option 3 : Créer des cartes SVG simples
--- 
--- Les coordonnées (x, y, width, height) sont en pourcentage (0-100)
--- par rapport à la taille de l'image
+-- Les cartes sont des SVG définis dans js/mapSvgs.js
+-- Cartes disponibles : 'europe', 'world', 'france', 'belgium'
+-- Les zones cliquables sont définies dans les SVG avec data-zone="id"
 -- 
 -- Pour TIMELINE :
 -- Les events doivent avoir un ID unique et un ordre logique
+-- Format : [{id, text, emoji}, ...]
 -- L'utilisateur glisse les cartes sur une ligne du temps visuelle
+-- 
+-- AVANT d'exécuter ce script :
+-- 1. Exécuter add_new_question_types.sql pour autoriser les nouveaux types
+-- 2. S'assurer que mapSvgs.js est chargé dans index.html
 -- =====================================================
 

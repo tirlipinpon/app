@@ -323,13 +323,21 @@ class QuestionManager {
     if (!question) return false;
     
     // Récupérer la réponse depuis Supabase
-    // Pour les questions d'association, la réponse est directement dans answer
+    // Différents formats selon le type de question
     let correctAnswer, validateFlexible;
+    
     if (question.question_type === 'association') {
+      // Association : answer contient {left, right, pairs}
       if (!question.answer || !question.answer.pairs) return false;
       correctAnswer = question.answer;
       validateFlexible = false;
+    } else if (question.question_type === 'timeline' || question.question_type === 'map-click') {
+      // Timeline et Map-click : answer est directement la valeur (array ou string)
+      if (!question.answer) return false;
+      correctAnswer = question.answer;
+      validateFlexible = false;
     } else {
+      // Autres types : answer contient {value, validateFlexible}
       if (!question.answer || question.answer.value === undefined || question.answer.value === null) return false;
       correctAnswer = question.answer.value;
       validateFlexible = question.answer.validateFlexible || false;

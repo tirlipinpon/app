@@ -392,18 +392,20 @@ class UIManager {
     if (!answerContainer) return;
     
     // questionData.options devrait contenir :
-    // { mapImage: "url", zones: [{id, name, coords: {x, y, width, height}}] }
+    // { mapKey: "europe", zones: [...] } ou directement le mapKey
     const mapData = questionData.options || {};
-    const mapImage = mapData.mapImage || '';
-    const zones = mapData.zones || [];
+    const mapKey = typeof mapData === 'string' ? mapData : (mapData.mapKey || 'europe');
+    
+    // Récupérer le SVG depuis mapSvgs.js
+    const mapSvg = typeof getMapSvg === 'function' ? getMapSvg(mapKey) : '';
+    const zones = typeof getMapZones === 'function' ? getMapZones(mapKey) : [];
     
     let html = `
       <div class="map-click-container">
-        <div class="map-wrapper">
-          <img src="${mapImage}" alt="Carte interactive" class="map-image" id="mapImage">
-          <svg class="map-overlay" id="mapOverlay">
-            <!-- Les zones cliquables seront dessinées ici -->
-          </svg>
+        <div class="map-wrapper" id="mapWrapper">
+          <div class="map-svg-container" id="mapSvgContainer">
+            ${mapSvg}
+          </div>
           <div class="map-click-marker hidden" id="mapMarker">📍</div>
         </div>
         <div class="map-instruction">
@@ -413,6 +415,13 @@ class UIManager {
     `;
     
     answerContainer.innerHTML = html;
+    
+    // Stocker les zones pour l'input handler
+    const mapWrapper = document.getElementById('mapWrapper');
+    if (mapWrapper) {
+      mapWrapper.dataset.zones = JSON.stringify(zones);
+      mapWrapper.dataset.mapKey = mapKey;
+    }
   }
   
   // ==========================================

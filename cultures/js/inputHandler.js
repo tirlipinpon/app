@@ -962,55 +962,72 @@ class InputHandler {
   // ==========================================
   
   setupMapClickType(questionData) {
-    const mapImage = document.getElementById('mapImage');
-    const mapOverlay = document.getElementById('mapOverlay');
+    const mapWrapper = document.getElementById('mapWrapper');
     const mapMarker = document.getElementById('mapMarker');
-    const mapWrapper = document.querySelector('.map-wrapper');
+    const mapSvgContainer = document.getElementById('mapSvgContainer');
     
-    if (!mapImage || !mapOverlay || !mapMarker || !mapWrapper) return;
+    if (!mapWrapper || !mapMarker || !mapSvgContainer) return;
     
-    // Définir les zones cliquables depuis questionData
-    const mapData = questionData.options || {};
-    const zones = mapData.zones || [];
+    // Récupérer les zones depuis le dataset (stocké par uiManager)
+    const zonesJson = mapWrapper.dataset.zones;
+    const zones = zonesJson ? JSON.parse(zonesJson) : [];
     
-    // Gérer le clic sur la carte
-    const handleMapClick = (e) => {
-      const rect = mapImage.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100; // Position en %
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
+    // Gérer le clic sur les zones SVG
+    const handleSvgClick = (e) => {
+      const target = e.target;
+      const zoneId = target.dataset.zone;
       
-      // Placer le marqueur
-      mapMarker.style.left = `${x}%`;
-      mapMarker.style.top = `${y}%`;
-      mapMarker.classList.remove('hidden');
-      
-      // Vérifier quelle zone a été cliquée
-      let clickedZone = null;
-      for (const zone of zones) {
-        const coords = zone.coords;
-        if (x >= coords.x && x <= coords.x + coords.width &&
-            y >= coords.y && y <= coords.y + coords.height) {
-          clickedZone = zone.id;
-          break;
-        }
+      if (zoneId) {
+        // Clic direct sur une zone SVG
+        const rect = mapSvgContainer.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        
+        // Placer le marqueur
+        mapMarker.style.left = `${x}%`;
+        mapMarker.style.top = `${y}%`;
+        mapMarker.classList.remove('hidden');
+        
+        // Validation automatique après 0.5s
+        setTimeout(() => {
+          this.game.handleAnswer(zoneId);
+        }, 500);
       }
-      
-      // Stocker la zone cliquée
-      mapMarker.dataset.clickedZone = clickedZone || '';
-      
-      // Validation automatique après 0.5s
-      setTimeout(() => {
-        const answer = mapMarker.dataset.clickedZone || 'unknown';
-        this.game.handleAnswer(answer);
-      }, 500);
     };
     
-    mapWrapper.addEventListener('click', handleMapClick);
-    this.currentInteractions.push({ 
-      element: mapWrapper, 
-      event: 'click', 
-      handler: handleMapClick 
-    });
+    // Attacher l'événement sur le SVG
+    const svg = mapSvgContainer.querySelector('svg');
+    if (svg) {
+      svg.addEventListener('click', handleSvgClick);
+      this.currentInteractions.push({ 
+        element: svg, 
+        event: 'click', 
+        handler: handleSvgClick 
+      });
+      
+      // Rendre les zones interactives
+      const zonePaths = svg.querySelectorAll('[data-zone]');
+      zonePaths.forEach(path => {
+        path.style.cursor = 'pointer';
+        path.style.transition = 'opacity 0.2s ease';
+        
+        const handleHover = () => {
+          path.style.opacity = '0.7';
+        };
+        
+        const handleLeave = () => {
+          path.style.opacity = '1';
+        };
+        
+        path.addEventListener('mouseenter', handleHover);
+        path.addEventListener('mouseleave', handleLeave);
+        
+        this.currentInteractions.push(
+          { element: path, event: 'mouseenter', handler: handleHover },
+          { element: path, event: 'mouseleave', handler: handleLeave }
+        );
+      });
+    }
   }
   
   // ==========================================

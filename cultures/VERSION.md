@@ -1,5 +1,25 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.2.2 - 19/10/2025 🗺️ Cartes SVG pour Map-Click
+
+### 🎨 Cartes SVG intégrées
+
+- **Nouveau fichier** : `js/mapSvgs.js` avec 4 cartes SVG
+- **Cartes créées** : Europe, Monde, France, Belgique
+- **Zones cliquables** : Définies avec `data-zone` dans les SVG
+- **Colorées et ludiques** : Adaptées pour enfants de 8-9 ans
+- **Pas d'images externes** : Tout dans le code
+- **Responsive** : S'adapte à toutes les tailles
+
+### Cartes disponibles
+
+- 🇪🇺 Europe (6 pays)
+- 🌍 Monde (5 continents)
+- 🇫🇷 France (4 villes)
+- 🇧🇪 Belgique (4 villes)
+
+---
+
 ## v2.2.1 - 19/10/2025 🔧 Correction Timeline & Map-Click
 
 ### 🐛 Correction
