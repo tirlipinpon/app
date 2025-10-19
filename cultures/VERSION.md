@@ -1,5 +1,17 @@
 # 📌 Historique des versions - Jeu Cultures
 
+## v2.1.2 - 19/10/2025 🔀 Shuffle Associations Corrigé
+
+### 🔧 Corrections de bugs
+
+#### Shuffle des questions d'association corrigé
+
+- **Problème** : Les éléments d'association n'étaient pas mélangés
+- **Cause** : L'interface utilisait `questionData.answer` au lieu de `questionData.options`
+- **Solution** : Interface modifiée pour utiliser les données mélangées
+
+---
+
 ## v2.1.1 - 19/10/2025 🔧 Correction Validation Associations
 
 ### 🔧 Corrections de bugs
@@ -248,4 +260,4 @@ Un simple **F5** charge automatiquement la dernière version ! ✅
 
 ---
 
-**Version actuelle : v2.1.1** ✅
+**Version actuelle : v2.1.2** ✅
