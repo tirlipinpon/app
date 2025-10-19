@@ -34,8 +34,28 @@ class CultureGame {
     this.attemptCount = 0;
     this.maxAttempts = 3; // 3 tentatives maximum
     
+    // Tracker des catégories déjà célébrées dans cette session
+    this.celebratedCategories = this.loadCelebratedCategories();
+    
     // Initialiser le jeu
     this.initialize();
+  }
+  
+  loadCelebratedCategories() {
+    try {
+      const saved = sessionStorage.getItem('celebratedCategories');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  
+  saveCelebratedCategories() {
+    try {
+      sessionStorage.setItem('celebratedCategories', JSON.stringify(this.celebratedCategories));
+    } catch (e) {
+      console.error('Erreur sauvegarde celebratedCategories:', e);
+    }
   }
   
   // ==========================================
@@ -226,7 +246,15 @@ class CultureGame {
     // Vérifier si la catégorie est complétée
     if (result.categoryCompleted) {
       console.log(`🎉 Catégorie ${this.currentCategory} complétée !`);
-      this.handleCategoryCompleted(this.currentCategory);
+      
+      // Ne célébrer que si pas déjà fait dans cette session
+      if (!this.celebratedCategories.includes(this.currentCategory)) {
+        this.handleCategoryCompleted(this.currentCategory);
+        this.celebratedCategories.push(this.currentCategory);
+        this.saveCelebratedCategories();
+      } else {
+        console.log(`ℹ️ Catégorie ${this.currentCategory} déjà célébrée dans cette session`);
+      }
       
       // Retour automatique à "Toutes"
       setTimeout(() => {
@@ -244,9 +272,19 @@ class CultureGame {
     const questionData = this.questionManager.prepareQuestion(this.currentQuestionId);
     
     if (!questionData) {
-      console.error('❌ Impossible de préparer la question');
-      this.ui.showFeedback('Erreur lors du chargement de la question', 'error');
-      this.isLoading = false;
+      console.error(`❌ Question invalide ou incomplète: ${this.currentQuestionId} - Passage à la suivante`);
+      this.ui.showFeedback('⚠️ Question invalide, chargement de la suivante...', 'warning');
+      
+      // Marquer la question comme invalide pour ne plus la reproposer
+      if (this.userManager.isLoggedIn()) {
+        this.incorrectTracker.markAsCorrect(this.currentQuestionId);
+      }
+      
+      // Charger automatiquement la question suivante après un court délai
+      setTimeout(() => {
+        this.isLoading = false;
+        this.loadQuestion();
+      }, 1500);
       return;
     }
     
