@@ -6,11 +6,12 @@ import { ImageService } from '../../services/image.service';
 import { Question } from '../../models/question.model';
 import { Category } from '../../models/category.model';
 import { MapEditorComponent, MapZone } from '../map-editor/map-editor.component';
+import { ImageCropperComponent, ImageCroppedEvent } from 'ngx-image-cropper';
 
 @Component({
   selector: 'app-questions',
   standalone: true,
-  imports: [CommonModule, FormsModule, MapEditorComponent],
+  imports: [CommonModule, FormsModule, MapEditorComponent, ImageCropperComponent],
   templateUrl: './questions.component.html',
   styleUrls: ['./questions.component.css']
 })
@@ -50,9 +51,12 @@ export class QuestionsComponent implements OnInit {
   remplirBlancsAnswers = signal<string[]>(['']);
   mapImageUrl = signal<string>('');
   mapImageBlob = signal<Blob | null>(null);
+  mapImageEvent: any = null; // Pour ngx-image-cropper
   mapZones = signal<MapZone[]>([]);
   mapValidationMode = signal<'any' | 'all'>('any');
   uploadingImage = signal(false);
+  showCropTool = signal(false);
+  croppedImageBlob: Blob | null = null;
 
   questionTypes = [
     { value: 'input', label: 'Texte libre' },
@@ -605,35 +609,74 @@ export class QuestionsComponent implements OnInit {
   }
 
   // Gestion Map-Click
-  async onImageUpload(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
+  onImageUpload(event: any) {
+    // Sauvegarder l'event pour ngx-image-cropper
+    this.mapImageEvent = event;
+    this.showCropTool.set(true);
+    this.mapZones.set([]); // Reset zones
+  }
 
-    if (!file.type.startsWith('image/')) {
-      alert('Veuillez sélectionner une image');
+  imageCropped(event: ImageCroppedEvent) {
+    // Sauvegarder le blob croppé
+    this.croppedImageBlob = event.blob || null;
+  }
+
+  imageLoaded() {
+    console.log('✅ Image chargée dans le cropper');
+  }
+
+  cropperReady() {
+    console.log('✅ Cropper prêt');
+  }
+
+  loadImageFailed() {
+    alert('Erreur de chargement de l\'image');
+    this.showCropTool.set(false);
+  }
+
+  openCropTool() {
+    if (!this.mapImageEvent) {
+      alert('Uploadez d\'abord une image');
+      return;
+    }
+    this.showCropTool.set(true);
+  }
+
+  closeCropTool() {
+    this.showCropTool.set(false);
+  }
+
+  async applyCrop() {
+    if (!this.croppedImageBlob) {
+      alert('Aucune image à recadrer');
       return;
     }
 
     this.uploadingImage.set(true);
-    this.error.set('');
 
     try {
-      console.log('🖼️ Optimisation image...');
+      console.log('✂️ Optimisation de l\'image recadrée...');
       
-      // Optimiser l'image en local (pas encore d'upload)
-      const { blob, dataUrl } = await this.imageService.optimizeImage(file);
-      console.log('✅ Image optimisée:', blob.size, 'bytes');
+      // Créer un File à partir du Blob
+      const croppedFile = new File([this.croppedImageBlob], 'cropped.png', { type: 'image/png' });
       
-      // Afficher l'image pour dessiner les zones
+      // Optimiser l'image recadrée (max 800px)
+      const { blob, dataUrl } = await this.imageService.optimizeImageWithDimensions(
+        croppedFile,
+        'original',
+        800
+      );
+      
+      console.log('✅ Image recadrée et optimisée:', blob.size, 'bytes');
+      
       this.mapImageUrl.set(dataUrl);
       this.mapImageBlob.set(blob);
-      this.mapZones.set([]); // Reset zones
+      this.showCropTool.set(false);
       
-      console.log('📍 Image prête pour édition');
     } catch (error: any) {
       this.error.set('Erreur: ' + error.message);
-      console.error('❌ Erreur optimisation:', error);
-      alert('Erreur optimisation: ' + error.message);
+      console.error('❌ Erreur:', error);
+      alert('Erreur: ' + error.message);
     } finally {
       this.uploadingImage.set(false);
     }

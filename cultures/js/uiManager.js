@@ -420,8 +420,8 @@ class UIManager {
         <div class="map-click-container">
           <div class="map-wrapper" id="mapWrapper">
             <div class="map-svg-container" id="mapSvgContainer">
-              <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
-                <image href="${mapData.imageUrl}" x="0" y="0" width="100" height="100" />
+              <svg viewBox="0 0 100 100" preserveAspectRatio="${mapData.dimensionMode === 'original' ? 'xMidYMid meet' : 'xMidYMid slice'}" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+                <image href="${mapData.imageUrl}" x="0" y="0" width="100" height="100" preserveAspectRatio="${mapData.dimensionMode === 'original' ? 'xMidYMid meet' : 'xMidYMid slice'}" />
                 <g class="zones-overlay">
                   ${zonesPolygons}
                 </g>

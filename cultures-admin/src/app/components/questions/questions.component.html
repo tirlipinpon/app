@@ -446,6 +446,7 @@
                 @if (mapImageUrl()) {
                   <p class="upload-status success">✅ Image uploadée</p>
                 }
+                <p class="help-text">L'image sera optimisée automatiquement (max 800px, <400KB, WebP)</p>
               </div>
 
               <div class="form-group">
@@ -467,12 +468,51 @@
                 </p>
               </div>
 
-              @if (mapImageUrl()) {
+              @if (showCropTool()) {
+                <div class="crop-tool-container">
+                  <image-cropper
+                    [imageChangedEvent]="mapImageEvent"
+                    [maintainAspectRatio]="false"
+                    [containWithinAspectRatio]="false"
+                    [resizeToWidth]="800"
+                    [cropperMinWidth]="50"
+                    [cropperMinHeight]="50"
+                    [onlyScaleDown]="true"
+                    [roundCropper]="false"
+                    [canvasRotation]="0"
+                    [transform]="{}"
+                    [alignImage]="'center'"
+                    [backgroundColor]="'#000'"
+                    [cropperStaticWidth]="0"
+                    [cropperStaticHeight]="0"
+                    format="png"
+                    (imageCropped)="imageCropped($event)"
+                    (imageLoaded)="imageLoaded()"
+                    (cropperReady)="cropperReady()"
+                    (loadImageFailed)="loadImageFailed()"
+                  ></image-cropper>
+                  
+                  <div class="crop-actions" style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+                    <button type="button" (click)="closeCropTool()" class="btn-secondary">
+                      ❌ Annuler
+                    </button>
+                    <button type="button" (click)="applyCrop()" class="btn-primary">
+                      ✅ Appliquer le recadrage
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @if (mapImageUrl() && !showCropTool()) {
                 <app-map-editor
                   [imageUrl]="mapImageUrl()"
                   [zones]="mapZones()"
                   (zonesChange)="onMapZonesChange($event)"
                 ></app-map-editor>
+                
+                <button type="button" (click)="openCropTool()" class="btn-secondary" style="margin-top: 12px;">
+                  ✂️ Re-recadrer l'image
+                </button>
               }
 
               @if (!mapImageUrl()) {

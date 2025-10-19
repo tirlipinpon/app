@@ -623,3 +623,24 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+.crop-tool-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.crop-tool-container ::ng-deep image-cropper {
+  display: block;
+  max-height: 600px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.crop-tool-container ::ng-deep .source-image {
+  max-height: 600px;
+}
+

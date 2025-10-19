@@ -7,6 +7,7 @@ export interface MapZone {
   label: string;
   points: {x: number, y: number}[]; // Coordonnées en pourcentage
   isCorrect: boolean;
+  rect?: {x: number, y: number, width: number, height: number}; // Pour les zones rectangulaires
 }
 
 @Component({
@@ -26,6 +27,7 @@ export class MapEditorComponent {
   selectedZone = signal<string | null>(null);
   newZoneLabel = signal('');
   showLabelInput = signal(false);
+  
 
   constructor() {
     // Effet pour émettre les changements

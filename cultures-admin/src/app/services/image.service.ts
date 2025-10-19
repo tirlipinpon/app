@@ -8,27 +8,144 @@ export class ImageService {
   constructor(private supabase: SupabaseService) {}
 
   async optimizeImage(file: File): Promise<{blob: Blob, dataUrl: string}> {
+    // Fonction legacy avec dimensions par défaut
+    return this.optimizeImageWithDimensions(file, 'square', 600);
+  }
+
+  async optimizeImageWithDimensions(
+    file: File, 
+    mode: 'square' | 'original', 
+    sizeOrMaxWidth: number
+  ): Promise<{blob: Blob, dataUrl: string, dimensions: {width: number, height: number}}> {
     try {
       // 1. Charger l'image
       const img = await this.loadImage(file);
       
-      // 2. Crop carré centré 600x600
-      const croppedCanvas = this.cropCenter(img, 600, 600);
+      let canvas: HTMLCanvasElement;
+      let finalWidth: number;
+      let finalHeight: number;
+      
+      if (mode === 'square') {
+        // 2a. Mode carré : crop centré
+        canvas = this.cropCenter(img, sizeOrMaxWidth, sizeOrMaxWidth);
+        finalWidth = sizeOrMaxWidth;
+        finalHeight = sizeOrMaxWidth;
+      } else {
+        // 2b. Mode original : redimensionner en gardant l'aspect ratio
+        const aspectRatio = img.width / img.height;
+        finalWidth = Math.min(sizeOrMaxWidth, img.width);
+        finalHeight = Math.round(finalWidth / aspectRatio);
+        
+        canvas = document.createElement('canvas');
+        canvas.width = finalWidth;
+        canvas.height = finalHeight;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
+      }
       
       // 3. Convertir en WebP et compresser
-      const webpBlob = await this.convertToWebP(croppedCanvas, 0.85);
+      const webpBlob = await this.convertToWebP(canvas, 0.85);
       
       // 4. Vérifier la taille et recompresser si nécessaire
-      const finalBlob = await this.ensureSize(croppedCanvas, webpBlob, 400 * 1024);
+      const finalBlob = await this.ensureSize(canvas, webpBlob, 400 * 1024);
       
       // 5. Créer Data URL pour affichage temporaire
       const dataUrl = await this.blobToDataUrl(finalBlob);
       
-      return { blob: finalBlob, dataUrl };
+      return { 
+        blob: finalBlob, 
+        dataUrl,
+        dimensions: { width: finalWidth, height: finalHeight }
+      };
     } catch (error) {
       console.error('Erreur optimisation image:', error);
       throw error;
     }
+  }
+
+  async optimizeImageWithCrop(
+    file: File,
+    cropArea: {top: number, bottom: number, left: number, right: number},
+    mode: 'square' | 'original',
+    sizeOrMaxWidth: number
+  ): Promise<{blob: Blob, dataUrl: string, dimensions: {width: number, height: number}}> {
+    try {
+      // 1. Charger l'image
+      const img = await this.loadImage(file);
+      
+      // 2. Appliquer le crop
+      const cropX = (img.width * cropArea.left) / 100;
+      const cropY = (img.height * cropArea.top) / 100;
+      const cropWidth = img.width - (img.width * (cropArea.left + cropArea.right)) / 100;
+      const cropHeight = img.height - (img.height * (cropArea.top + cropArea.bottom)) / 100;
+      
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = cropWidth;
+      croppedCanvas.height = cropHeight;
+      const croppedCtx = croppedCanvas.getContext('2d')!;
+      croppedCtx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      
+      // 3. Redimensionner selon le mode
+      let finalCanvas: HTMLCanvasElement;
+      let finalWidth: number;
+      let finalHeight: number;
+      
+      if (mode === 'square') {
+        // Mode carré : crop centré depuis l'image déjà croppée
+        const tempImg = await this.canvasToImage(croppedCanvas);
+        finalCanvas = this.cropCenter(tempImg, sizeOrMaxWidth, sizeOrMaxWidth);
+        finalWidth = sizeOrMaxWidth;
+        finalHeight = sizeOrMaxWidth;
+      } else {
+        // Mode original : redimensionner en gardant l'aspect ratio
+        const aspectRatio = cropWidth / cropHeight;
+        finalWidth = Math.min(sizeOrMaxWidth, cropWidth);
+        finalHeight = Math.round(finalWidth / aspectRatio);
+        
+        finalCanvas = document.createElement('canvas');
+        finalCanvas.width = finalWidth;
+        finalHeight = finalHeight;
+        const ctx = finalCanvas.getContext('2d')!;
+        ctx.drawImage(croppedCanvas, 0, 0, finalWidth, finalHeight);
+      }
+      
+      // 4. Convertir en WebP et compresser
+      const webpBlob = await this.convertToWebP(finalCanvas, 0.85);
+      
+      // 5. Vérifier la taille et recompresser si nécessaire
+      const finalBlob = await this.ensureSize(finalCanvas, webpBlob, 400 * 1024);
+      
+      // 6. Créer Data URL pour affichage temporaire
+      const dataUrl = await this.blobToDataUrl(finalBlob);
+      
+      return {
+        blob: finalBlob,
+        dataUrl,
+        dimensions: { width: finalWidth, height: finalHeight }
+      };
+    } catch (error) {
+      console.error('Erreur crop image:', error);
+      throw error;
+    }
+  }
+
+  private canvasToImage(canvas: HTMLCanvasElement): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Failed to convert canvas to blob'));
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = reject;
+        img.src = url;
+      });
+    });
   }
 
   async uploadOptimizedImage(blob: Blob, questionId: string): Promise<string> {
