@@ -1,0 +1,41 @@
+<div class="admin-container">
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h1>🎓 Admin Cultures</h1>
+      <p>{{ authService.currentUser()?.email }}</p>
+    </div>
+
+    <div class="nav-links">
+      <a 
+        routerLink="/admin/dashboard" 
+        [class.active]="isActive('/admin/dashboard')"
+        class="nav-link"
+      >
+        🏠 Tableau de bord
+      </a>
+      <a 
+        routerLink="/admin/categories" 
+        [class.active]="isActive('/admin/categories')"
+        class="nav-link"
+      >
+        📚 Catégories
+      </a>
+      <a 
+        routerLink="/admin/questions" 
+        [class.active]="isActive('/admin/questions')"
+        class="nav-link"
+      >
+        ❓ Questions
+      </a>
+    </div>
+
+    <button (click)="logout()" class="btn-logout">
+      🚪 Déconnexion
+    </button>
+  </nav>
+
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+

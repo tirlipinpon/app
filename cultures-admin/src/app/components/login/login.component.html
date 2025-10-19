@@ -1,0 +1,53 @@
+<div class="login-container">
+  <div class="login-card">
+    <h1>Administration Cultures</h1>
+    <h2>Connexion</h2>
+    
+    <form (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          [(ngModel)]="email" 
+          name="email"
+          required 
+          placeholder="votre@email.com"
+          [disabled]="loading()"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input 
+          type="password" 
+          id="password" 
+          [(ngModel)]="password"
+          name="password"
+          required 
+          placeholder="••••••••"
+          [disabled]="loading()"
+        >
+      </div>
+
+      @if (error()) {
+        <div class="error-message">
+          {{ error() }}
+        </div>
+      }
+
+      <button 
+        type="submit" 
+        class="btn-primary"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          <span>Connexion en cours...</span>
+        } @else {
+          <span>Se connecter</span>
+        }
+      </button>
+    </form>
+  </div>
+</div>
+

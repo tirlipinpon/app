@@ -1,0 +1,221 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Gestion des Questions</h1>
+    <div class="header-actions">
+      <select 
+        [(ngModel)]="selectedCategoryId" 
+        (change)="onCategoryFilterChange()"
+        class="category-filter"
+      >
+        <option [value]="undefined">Toutes les catégories</option>
+        @for (category of categories(); track category.id) {
+          <option [value]="category.id">{{ category.name }}</option>
+        }
+      </select>
+      <button (click)="openCreateForm()" class="btn-primary">
+        ➕ Nouvelle Question
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="error-message">{{ error() }}</div>
+  }
+
+  @if (loading() && questions().length === 0) {
+    <div class="loading">Chargement...</div>
+  } @else {
+    <div class="questions-list">
+      @for (question of questions(); track question.id) {
+        <div class="question-card">
+          <div class="question-header">
+            <span class="category-badge">{{ getCategoryName(question.category_id) }}</span>
+            <span class="type-badge">{{ question.question_type }}</span>
+            <span class="difficulty-badge" [class]="'difficulty-' + question.difficulty">
+              {{ question.difficulty }}
+            </span>
+          </div>
+          
+          <div class="question-content">
+            <h3>{{ question.question_text }}</h3>
+            <p class="correct-answer">✅ Réponse: {{ question.correct_answer }}</p>
+            
+            @if (question.wrong_answers && question.wrong_answers.length > 0) {
+              <div class="wrong-answers">
+                <strong>Mauvaises réponses:</strong>
+                <ul>
+                  @for (answer of question.wrong_answers; track $index) {
+                    <li>{{ answer }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (question.hint) {
+              <p class="hint">💡 Indice: {{ question.hint }}</p>
+            }
+          </div>
+
+          <div class="question-actions">
+            <button (click)="openEditForm(question)" class="btn-edit">
+              ✏️ Modifier
+            </button>
+            <button (click)="deleteQuestion(question)" class="btn-delete">
+              🗑️ Supprimer
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (questions().length === 0) {
+      <div class="empty-state">
+        <p>Aucune question pour le moment</p>
+        <button (click)="openCreateForm()" class="btn-primary">
+          Créer la première question
+        </button>
+      </div>
+    }
+  }
+
+  @if (showForm()) {
+    <div class="modal-overlay" (click)="closeForm()">
+      <div class="modal-content large" (click)="$event.stopPropagation()">
+        <h2>{{ editingQuestion() ? 'Modifier' : 'Nouvelle' }} Question</h2>
+        
+        <form (ngSubmit)="onSubmit()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="category">Catégorie *</label>
+              <select 
+                id="category" 
+                [(ngModel)]="formData().category_id"
+                name="category"
+                required
+              >
+                @for (category of categories(); track category.id) {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="type">Type de question *</label>
+              <select 
+                id="type" 
+                [(ngModel)]="formData().question_type"
+                name="type"
+                required
+              >
+                @for (type of questionTypes; track type.value) {
+                  <option [value]="type.value">{{ type.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="difficulty">Difficulté</label>
+              <select 
+                id="difficulty" 
+                [(ngModel)]="formData().difficulty"
+                name="difficulty"
+              >
+                @for (diff of difficulties; track diff.value) {
+                  <option [value]="diff.value">{{ diff.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="question">Question *</label>
+            <textarea 
+              id="question" 
+              [(ngModel)]="formData().question_text"
+              name="question"
+              rows="3"
+              required
+              placeholder="Entrez votre question..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="correct">Réponse correcte *</label>
+            <input 
+              type="text" 
+              id="correct" 
+              [(ngModel)]="formData().correct_answer"
+              name="correct"
+              required
+              placeholder="La bonne réponse"
+            >
+          </div>
+
+          @if (formData().question_type === 'qcm') {
+            <div class="form-group">
+              <label>Mauvaises réponses</label>
+              @for (answer of formData().wrong_answers; track $index) {
+                <div class="answer-input">
+                  <input 
+                    type="text" 
+                    [value]="answer"
+                    (input)="updateWrongAnswer($index, $any($event.target).value)"
+                    placeholder="Mauvaise réponse {{ $index + 1 }}"
+                  >
+                  @if (formData().wrong_answers.length > 1) {
+                    <button 
+                      type="button" 
+                      (click)="removeWrongAnswer($index)"
+                      class="btn-remove"
+                    >
+                      ✖️
+                    </button>
+                  }
+                </div>
+              }
+              <button 
+                type="button" 
+                (click)="addWrongAnswer()"
+                class="btn-add"
+              >
+                ➕ Ajouter une réponse
+              </button>
+            </div>
+          }
+
+          <div class="form-group">
+            <label for="hint">Indice</label>
+            <input 
+              type="text" 
+              id="hint" 
+              [(ngModel)]="formData().hint"
+              name="hint"
+              placeholder="Un petit indice pour aider..."
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="explanation">Explication</label>
+            <textarea 
+              id="explanation" 
+              [(ngModel)]="formData().explanation"
+              name="explanation"
+              rows="3"
+              placeholder="Explication de la réponse..."
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" (click)="closeForm()" class="btn-secondary">
+              Annuler
+            </button>
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              {{ editingQuestion() ? 'Mettre à jour' : 'Créer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
+

@@ -1,0 +1,101 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Gestion des Catégories</h1>
+    <button (click)="openCreateForm()" class="btn-primary">
+      ➕ Nouvelle Catégorie
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error-message">{{ error() }}</div>
+  }
+
+  @if (loading() && categories().length === 0) {
+    <div class="loading">Chargement...</div>
+  } @else {
+    <div class="categories-grid">
+      @for (category of categories(); track category.id) {
+        <div class="category-card">
+          <div class="category-icon">{{ category.icon || '📚' }}</div>
+          <div class="category-info">
+            <h3>{{ category.name }}</h3>
+            @if (category.description) {
+              <p>{{ category.description }}</p>
+            }
+          </div>
+          <div class="category-actions">
+            <button (click)="openEditForm(category)" class="btn-edit">
+              ✏️ Modifier
+            </button>
+            <button (click)="deleteCategory(category)" class="btn-delete">
+              🗑️ Supprimer
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (categories().length === 0) {
+      <div class="empty-state">
+        <p>Aucune catégorie pour le moment</p>
+        <button (click)="openCreateForm()" class="btn-primary">
+          Créer la première catégorie
+        </button>
+      </div>
+    }
+  }
+
+  @if (showForm()) {
+    <div class="modal-overlay" (click)="closeForm()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <h2>{{ editingCategory() ? 'Modifier' : 'Nouvelle' }} Catégorie</h2>
+        
+        <form (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <label for="name">Nom *</label>
+            <input 
+              type="text" 
+              id="name" 
+              [(ngModel)]="formData().name"
+              name="name"
+              required
+              placeholder="Ex: Histoire"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="icon">Icône</label>
+            <input 
+              type="text" 
+              id="icon" 
+              [(ngModel)]="formData().icon"
+              name="icon"
+              placeholder="Ex: 📚"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea 
+              id="description" 
+              [(ngModel)]="formData().description"
+              name="description"
+              rows="3"
+              placeholder="Description de la catégorie..."
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" (click)="closeForm()" class="btn-secondary">
+              Annuler
+            </button>
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              {{ editingCategory() ? 'Mettre à jour' : 'Créer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
+
