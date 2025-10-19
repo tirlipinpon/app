@@ -3,7 +3,7 @@
 // ============================================
 // Version: 2.1.9
 
-const GAME_VERSION = '2.3.0';
+const GAME_VERSION = '2.3.1';
 
 class CultureGame {
   constructor() {

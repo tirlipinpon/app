@@ -16,6 +16,32 @@ class UserManager {
     
     // 🚀 Auto-restauration de la session au chargement
     this.restoreSession();
+    
+    // 🧹 Nettoyer les vieux cookies (migration vers localStorage)
+    this.cleanupOldCookies();
+  }
+  
+  // 🧹 Nettoyer tous les vieux cookies du jeu (migration vers localStorage)
+  cleanupOldCookies() {
+    try {
+      const cookies = document.cookie.split(';');
+      let cleanedCount = 0;
+      
+      cookies.forEach(cookie => {
+        const name = cookie.split('=')[0].trim();
+        // Supprimer les cookies des jeux (cultures, math, mots, categories)
+        if (name.includes('_game_') || name.includes('game_')) {
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+          cleanedCount++;
+        }
+      });
+      
+      if (cleanedCount > 0) {
+        console.log(`🧹 ${cleanedCount} vieux cookies nettoyés et migrés vers localStorage`);
+      }
+    } catch (e) {
+      console.warn('⚠️ Erreur nettoyage cookies:', e);
+    }
   }
   
   // 🚀 Restaurer la session automatiquement au chargement
@@ -217,15 +243,34 @@ class UserManager {
   }
 
   // Gestion des cookies
+  // Migration vers localStorage au lieu de cookies pour éviter les limites de taille
   setCookie(name, value, days) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-    const encodedValue = encodeURIComponent(value);
-    document.cookie = `${name}=${encodedValue};expires=${expires.toUTCString()};path=/`;
-    console.log(`🍪 Cookie enregistré: ${name}`);
+    try {
+      localStorage.setItem(name, value);
+      console.log(`💾 Donnée enregistrée dans localStorage: ${name} (${value.length} caractères)`);
+    } catch (e) {
+      console.error('❌ Erreur localStorage (quota dépassé?):', e);
+      // Fallback vers cookie si localStorage échoue
+      const expires = new Date();
+      expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+      const encodedValue = encodeURIComponent(value);
+      document.cookie = `${name}=${encodedValue};expires=${expires.toUTCString()};path=/`;
+      console.log(`🍪 Fallback: Cookie enregistré: ${name}`);
+    }
   }
 
   getCookie(name) {
+    // Vérifier d'abord dans localStorage
+    try {
+      const value = localStorage.getItem(name);
+      if (value !== null) {
+        return value;
+      }
+    } catch (e) {
+      console.warn('⚠️ Erreur lecture localStorage:', e);
+    }
+    
+    // Fallback: chercher dans les cookies (pour migration depuis ancienne version)
     const nameEQ = name + "=";
     const ca = document.cookie.split(';');
     for (let i = 0; i < ca.length; i++) {
@@ -233,7 +278,20 @@ class UserManager {
       while (c.charAt(0) === ' ') c = c.substring(1, c.length);
       if (c.indexOf(nameEQ) === 0) {
         const encodedValue = c.substring(nameEQ.length, c.length);
-        return decodeURIComponent(encodedValue);
+        const decoded = decodeURIComponent(encodedValue);
+        
+        // Migrer vers localStorage et supprimer le cookie
+        console.log(`🔄 Migration du cookie "${name}" vers localStorage`);
+        try {
+          localStorage.setItem(name, decoded);
+          // Supprimer le cookie après migration
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+          console.log(`✅ Cookie migré et supprimé: ${name}`);
+        } catch (e) {
+          console.warn('⚠️ Impossible de migrer vers localStorage:', e);
+        }
+        
+        return decoded;
       }
     }
     return null;
@@ -241,6 +299,15 @@ class UserManager {
 
   // Supprimer un cookie
   deleteCookie(name) {
+    // Supprimer de localStorage
+    try {
+      localStorage.removeItem(name);
+      console.log(`🗑️ Donnée supprimée de localStorage: ${name}`);
+    } catch (e) {
+      console.warn('⚠️ Erreur suppression localStorage:', e);
+    }
+    
+    // Supprimer aussi le cookie (pour nettoyage)
     document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
   }
 
