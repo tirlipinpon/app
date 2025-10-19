@@ -498,7 +498,12 @@ class QuestionManager {
     // Convertir les pairs correctes en objet pour faciliter la comparaison
     const correctPairsObj = {};
     correctAnswer.pairs.forEach(pair => {
-      correctPairsObj[pair[0]] = pair[1];
+      // Support des deux formats : array [left, right] et objet {left, right}
+      if (Array.isArray(pair)) {
+        correctPairsObj[pair[0]] = pair[1];
+      } else if (pair.left && pair.right) {
+        correctPairsObj[pair.left] = pair.right;
+      }
     });
     
     const userKeys = Object.keys(userPairs);
